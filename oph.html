@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ОПХ Конструктор v1.9.11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1419;
+            --bg-card: #1a2028;
+            --bg-hover: #242d38;
+            --fg: #e8edf3;
+            --muted: #6b7d8f;
+            --accent: #00bfa5;
+            --accent-glow: rgba(0, 191, 165, 0.2);
+            --border: #2a3542;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .bg-pattern {
+            background-image: radial-gradient(circle at 15% 50%, rgba(0, 191, 165, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at 85% 30%, rgba(0, 191, 165, 0.03) 0%, transparent 35%);
+            background-attachment: fixed;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: border-color 0.2s ease;
+        }
+        .card:hover { border-color: rgba(0, 191, 165, 0.3); }
+        .block-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .block-suffix { color: var(--accent); font-weight: 700; font-size: 0.75rem; }
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            padding: 0.4rem 0.6rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .checkbox-wrapper:hover { background: var(--bg-hover); }
+        .checkbox-wrapper.checked { background: var(--accent-glow); }
+        .custom-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            margin-right: 0.6rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .checkbox-wrapper.checked .custom-checkbox { background: var(--accent); border-color: var(--accent); }
+        .check-icon { width: 10px; height: 10px; stroke: var(--bg); stroke-width: 3; display: none; }
+        .checkbox-wrapper.checked .check-icon { display: block; }
+        .item-name { flex: 1; font-size: 0.9rem; min-width: 100px; }
+        .suffix-badge { font-size: 0.65rem; color: var(--muted); margin-left: 0.3rem; }
+        .options-container { display: flex; gap: 0.5rem; margin-left: auto; }
+        .option-btn {
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            background: var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+            font-weight: 500;
+        }
+        .option-btn.active { background: var(--accent); color: var(--bg); font-weight: 600; border-color: var(--accent); }
+        .option-btn:hover:not(.active) { border-color: var(--accent); color: var(--fg); background: rgba(0,191,165,0.15); }
+        .result-box {
+            background: linear-gradient(160deg, #1a2028 0%, #151b22 100%);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+        }
+        .btn { padding: 0.65rem 1.25rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; border: none; }
+        .btn-primary { background: var(--accent); color: var(--bg); }
+        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0, 191, 165, 0.25); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--fg); }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--accent); color: var(--bg); padding: 0.8rem 1.25rem; border-radius: 6px; font-weight: 600; opacity: 0; transition: all 0.3s ease; z-index: 1000; pointer-events: none; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp 0.4s ease forwards; }
+        .block-card { opacity: 0; animation: fadeInUp 0.4s ease forwards; }
+        .info-note { font-size: 0.65rem; color: var(--muted); margin-top: 0.5rem; text-align: center; padding-top: 0.4rem; border-top: 1px solid var(--border); }
+        .rule-list { list-style: none; margin: 0; padding: 0; }
+        .rule-list li { margin-bottom: 0.5rem; font-size: 0.7rem; line-height: 1.3; }
+        .rule-list li::before { content: "▹"; color: var(--accent); margin-right: 0.4rem; }
+        .version-badge { background: var(--accent); color: var(--bg); font-size: 0.6rem; padding: 0.1rem 0.4rem; border-radius: 10px; margin-left: 0.5rem; }
+    </style>
+</head>
+<body class="bg-pattern">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 py-8">
+        <header class="mb-8 animate-in">
+            <h1 class="text-2xl md:text-3xl font-bold mb-1">ОПХ Конструктор <span class="version-badge">v1.9.11</span></h1>
+            <p class="text-sm" style="color: var(--muted)">Стабилизирована логика комбо-блоков и порядок вывода</p>
+        </header>
+        <div class="grid lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" id="blocksContainer"></div>
+            </div>
+            <div class="lg:col-span-1">
+                <div class="sticky top-4">
+                    <div class="result-box">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted)">Результат</span>
+                            <span class="text-xs mono px-2 py-1 rounded" style="background: var(--accent-glow); color: var(--accent)" id="itemCount">0 позиций</span>
+                        </div>
+                        <div class="mono text-sm leading-relaxed mb-6 min-h-[60px] break-all" style="color: var(--fg);" id="resultText">ОПХ ()</div>
+                        <div class="flex gap-3">
+                            <button class="btn btn-primary flex-1" id="copyBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>Копировать</button>
+                            <button class="btn btn-secondary flex-1" id="clearBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Очистить</button>
+                        </div>
+                    </div>
+                    <div class="mt-4 card p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted)">📖 Мини-справочник</h3>
+                        </div>
+                        <ul class="rule-list">
+                            <li><span class="mono" style="color:var(--fg)">Москвич ст+ж-б</span> → выводится <b>после блока ст</b></li>
+                            <li><span class="mono" style="color:var(--fg)">Бочкарев комбо</span> → без дублей, строго `ст 0,43/пэт 0,9` или `ст/ж-б 0,43`</li>
+                            <li><span class="mono" style="color:var(--fg)">Ж-б группа</span> → всегда `ж-б 0,43`</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="toast">✅ Скопировано!</div>
+    <script>
+        // ============================================================
+        // ОПХ КОНСТРУКТОР v1.9.11
+        // Финальная стабилизация: порядок блоков, исключение дублей, фикс объёмов
+        // ============================================================
+        
+        const BOCHKAREV = {
+            st: { id: 'bochkarev_st', name: 'Бочкарев', type: 'ст', volume: '0,43' },
+            jb: { id: 'bochkarev_jb', name: 'Бочкарев', type: 'ж-б', volume: '0,43' },
+            pet: { id: 'bochkarev_pet', name: 'Бочкарев', type: 'пэт', volume: '0,9' }
+        };
+        const MOSKVICH = {
+            st: { id: 'moskvich_st', name: 'Москвич', type: 'ст', volume: '0,33' },
+            jb: { id: 'moskvich_jb', name: 'Москвич', type: 'ж-б', volume: '0,43' }
+        };
+        const ZHIGULI = {
+            jb: { id: 'zhiguli_jb', name: 'Жигулевское', type: 'ж-б', volume: '0,43' },
+            pet: { id: 'zhiguli_pet', name: 'Жигулевское', type: 'пэт', volume: '1,2' }
+        };
+        const OKHOTA = {
+            jb: { id: 'okhota_jb', name: 'Охота', type: 'ж-б', volume: '0,43' },
+            pet: { id: 'okhota_pet', name: 'Охота', type: 'пэт', volume: '1,2' }
+        };
+        
+        let selected = new Set();
+        
+        const blocks = [
+            { id: 1, title: '🥃 Стекло', items: [
+                { id: 'diesel', name: 'Доктор Дизель', type: 'ст', volume: '0,4' }
+            ]},
+            { id: 2, title: '🍺 Жесть (ж-б 0,43)', items: [
+                { id: 'cider', name: 'Сидр Мистер Лис', type: 'ж-б', volume: '0,43' },
+                { id: 'goesser', name: 'Гёссер', type: 'ж-б', volume: '0,43' },
+                { id: 'gold', name: 'Голд', type: 'ж-б', volume: '0,43' },
+                { id: 'krusovice_jb', name: 'Крушовице', type: 'ж-б', volume: '0,43' }
+            ]},
+            { id: 3, title: '⭐ Выбор типа', multi: true, items: [
+                { name: 'Москвич', cfg: MOSKVICH, opts: ['ст', 'ж-б'] },
+                { name: 'Бочкарев', cfg: BOCHKAREV, opts: ['ст', 'ж-б', 'пэт'] },
+                { name: 'Жигулевское', cfg: ZHIGULI, opts: ['ж-б', 'пэт'] },
+                { name: 'Охота', cfg: OKHOTA, opts: ['ж-б', 'пэт'] }
+            ]}
+        ];
+        
+        function activeTypes(cfg) {
+            let a = [];
+            for (let k in cfg) if (selected.has(cfg[k].id)) a.push(cfg[k].type);
+            return a;
+        }
+        
+        function render() {
+            let html = '';
+            blocks.forEach((b) => {
+                if (b.multi) {
+                    let inner = '';
+                    for (let it of b.items) {
+                        let act = activeTypes(it.cfg);
+                        let btns = it.opts.map(o => {
+                            let label = '';
+                            if (o === 'ст') label = it.name === 'Москвич' ? 'ст 0,33' : 'ст 0,43';
+                            else if (o === 'ж-б') label = 'ж-б 0,43';
+                            else if (o === 'пэт') label = it.name === 'Бочкарев' ? 'пэт 0,9' : 'пэт 1,2';
+                            return `<div class="option-btn ${act.includes(o) ? 'active' : ''}" data-name="${it.name}" data-opt="${o}">${label}</div>`;
+                        }).join('');
+                        inner += `<div class="checkbox-wrapper ${act.length ? 'checked' : ''}" data-multi="${it.name}">
+                            <span class="custom-checkbox"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                            <span class="item-name">${it.name}</span>
+                            <div class="options-container">${btns}</div>
+                        </div>`;
+                    }
+                    html += `<div class="card p-4 block-card"><div class="block-title"><span>${b.title}</span><span class="block-suffix">выбор</span></div>${inner}<div class="info-note">✓ клик по названию = выбрать все типы</div></div>`;
+                } else {
+                    let inner = b.items.map(it => `<div class="checkbox-wrapper ${selected.has(it.id) ? 'checked' : ''}" data-id="${it.id}">
+                        <span class="custom-checkbox"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                        <span class="item-name">${it.name}</span>
+                        <span class="suffix-badge">(${it.type} ${it.volume})</span>
+                    </div>`).join('');
+                    html += `<div class="card p-4 block-card"><div class="block-title"><span>${b.title}</span><span class="block-suffix">${b.items[0]?.type || ''}</span></div>${inner}</div>`;
+                }
+            });
+            document.getElementById('blocksContainer').innerHTML = html;
+        }
+        
+        function onClick(e) {
+            let btn = e.target.closest('.option-btn');
+            if (btn && btn.dataset.opt) {
+                e.stopPropagation();
+                let name = btn.dataset.name;
+                let opt = btn.dataset.opt;
+                let id = null;
+                
+                if (name === 'Москвич') { id = opt === 'ст' ? MOSKVICH.st.id : MOSKVICH.jb.id; }
+                else if (name === 'Бочкарев') {
+                    if (opt === 'ст') id = BOCHKAREV.st.id;
+                    else if (opt === 'ж-б') id = BOCHKAREV.jb.id;
+                    else if (opt === 'пэт') id = BOCHKAREV.pet.id;
+                } else if (name === 'Жигулевское') { id = opt === 'ж-б' ? ZHIGULI.jb.id : ZHIGULI.pet.id; }
+                else if (name === 'Охота') { id = opt === 'ж-б' ? OKHOTA.jb.id : OKHOTA.pet.id; }
+                
+                if (id) {
+                    selected.has(id) ? selected.delete(id) : selected.add(id);
+                    render(); update();
+                }
+                return;
+            }
+            
+            let wrap = e.target.closest('.checkbox-wrapper');
+            if (!wrap) return;
+            
+            let multi = wrap.dataset.multi;
+            if (multi) {
+                let ids = [];
+                if (multi === 'Москвич') ids = [MOSKVICH.st.id, MOSKVICH.jb.id];
+                else if (multi === 'Бочкарев') ids = [BOCHKAREV.st.id, BOCHKAREV.jb.id, BOCHKAREV.pet.id];
+                else if (multi === 'Жигулевское') ids = [ZHIGULI.jb.id, ZHIGULI.pet.id];
+                else if (multi === 'Охота') ids = [OKHOTA.jb.id, OKHOTA.pet.id];
+                
+                let all = ids.every(id => selected.has(id));
+                if (all) ids.forEach(id => selected.delete(id));
+                else ids.forEach(id => selected.add(id));
+                render(); update();
+                return;
+            }
+            
+            let id = wrap.dataset.id;
+            if (id) {
+                selected.has(id) ? selected.delete(id) : selected.add(id);
+                render(); update();
+            }
+        }
+        
+        function update() {
+            let jbItems = [];
+            let stItems = [];
+            
+            // 1. Сбор обычных товаров
+            blocks.forEach(b => {
+                if (b.multi) return;
+                b.items.forEach(it => { 
+                    if (selected.has(it.id)) {
+                        if (it.type === 'ж-б') jbItems.push({ name: it.name, volume: it.volume });
+                        else if (it.type === 'ст') stItems.push({ name: it.name, volume: it.volume });
+                    }
+                });
+            });
+            
+            // Флаги
+            let bochSt = selected.has(BOCHKAREV.st.id);
+            let bochJb = selected.has(BOCHKAREV.jb.id);
+            let bochPet = selected.has(BOCHKAREV.pet.id);
+            
+            let moskSt = selected.has(MOSKVICH.st.id);
+            let moskJb = selected.has(MOSKVICH.jb.id);
+            let moskCombo = moskSt && moskJb;
+            
+            let zhigJb = selected.has(ZHIGULI.jb.id);
+            let zhigPet = selected.has(ZHIGULI.pet.id);
+            let okhJb = selected.has(OKHOTA.jb.id);
+            let okhPet = selected.has(OKHOTA.pet.id);
+            let zhigCombo = zhigJb && zhigPet;
+            let okhCombo = okhJb && okhPet;
+            
+            // 2. Распределение по пулам (исключая комбо-варианты)
+            if (!zhigCombo && zhigJb) jbItems.push({ name: 'Жигулевское', volume: '0,43' });
+            if (!okhCombo && okhJb) jbItems.push({ name: 'Охота', volume: '0,43' });
+            
+            if (!moskCombo) {
+                if (moskJb) jbItems.push({ name: 'Москвич', volume: '0,43' });
+                if (moskSt) stItems.push({ name: 'Москвич', volume: '0,33' });
+            }
+            
+            // Определяем тип комбо Бочкарева
+            let bochCombo = null;
+            if (bochSt && bochJb && bochPet) bochCombo = 'Бочкарев ст/ж-б 0,43/пэт 0,9';
+            else if (bochSt && bochPet && !bochJb) bochCombo = 'Бочкарев ст 0,43/пэт 0,9';
+            else if (bochJb && bochPet && !bochSt) bochCombo = 'Бочкарев ж-б 0,43/пэт 0,9';
+            else if (bochSt && bochJb && !bochPet) bochCombo = 'Бочкарев ст/ж-б 0,43';
+            
+            // Соло-флаги (только для обычных групп)
+            let bochStSolo = bochSt && !bochJb && !bochPet;
+            let bochJbSolo = bochJb && !bochSt && !bochPet;
+            
+            let parts = [];
+            
+            // 1. Ж-б группа (0,43)
+            if (jbItems.length || bochJbSolo) {
+                let names = [...new Set(jbItems.map(i => i.name))];
+                if (bochJbSolo) names.push('Бочкарев');
+                if (names.length) {
+                    if (names.includes('Сидр Мистер Лис')) {
+                        names = ['Сидр Мистер Лис', ...names.filter(n => n !== 'Сидр Мистер Лис')];
+                    }
+                    parts.push(`${names.join('/')} ж-б 0,43`);
+                }
+            }
+            
+            // 2. Ст группа
+            if (stItems.length || bochStSolo) {
+                let stMap = new Map();
+                for (let it of stItems) if (!stMap.has(it.name)) stMap.set(it.name, it.volume);
+                if (bochStSolo) stMap.set('Бочкарев', '0,43');
+                
+                let uniqueSt = [...stMap.entries()].map(([name, vol]) => ({ name, volume: vol }));
+                uniqueSt.sort((a,b) => parseFloat(a.volume.replace(',','.')) - parseFloat(b.volume.replace(',','.')));
+                
+                let bochIndex = uniqueSt.findIndex(i => i.name === 'Бочкарев');
+                if (bochIndex > 0) uniqueSt.unshift(uniqueSt.splice(bochIndex, 1)[0]);
+                
+                let stResult = [];
+                for (let i = 0; i < uniqueSt.length; i++) {
+                    const isLast = (i === uniqueSt.length - 1);
+                    stResult.push(isLast ? `${uniqueSt[i].name} ст ${uniqueSt[i].volume}` : `${uniqueSt[i].name} ${uniqueSt[i].volume}`);
+                }
+                if (stResult.length) parts.push(stResult.join('/'));
+            }
+            
+            // 3. Москвич комбо (ст + ж-б) - строго ПОСЛЕ блока ст
+            if (moskCombo) {
+                parts.push(`Москвич ст 0,33/ж-б 0,43`);
+            }
+            
+            // 4. Бочкарев комбо
+            if (bochCombo) {
+                parts.push(bochCombo);
+            }
+            
+            // 5. Жигулевское/Охота комбо
+            if (zhigCombo || okhCombo) {
+                let comboNames = [];
+                if (zhigCombo) comboNames.push('Жигулевское');
+                if (okhCombo) comboNames.push('Охота');
+                parts.push(`${comboNames.join('/')} ж-б 0,43/пэт 1,2`);
+            }
+            
+            // 6. Унифицированный блок ПЭТ
+            let petPool = [];
+            if (bochPet && !bochCombo) petPool.push({ name: 'Бочкарев', volume: '0,9' });
+            if (zhigPet && !zhigCombo) petPool.push({ name: 'Жигулевское', volume: '1,2' });
+            if (okhPet && !okhCombo) petPool.push({ name: 'Охота', volume: '1,2' });
+            
+            if (petPool.length > 0) {
+                let volGroups = new Map();
+                for (let p of petPool) {
+                    if (!volGroups.has(p.volume)) volGroups.set(p.volume, []);
+                    if (!volGroups.get(p.volume).includes(p.name)) volGroups.get(p.volume).push(p.name);
+                }
+                let sortedVols = [...volGroups.keys()].sort((a,b) => parseFloat(a.replace(',','.')) - parseFloat(b.replace(',','.')));
+                let petParts = [];
+                sortedVols.forEach((vol, idx) => {
+                    let isLast = (idx === sortedVols.length - 1);
+                    let names = volGroups.get(vol).join('/');
+                    petParts.push(isLast ? `${names} пэт ${vol}` : `${names} ${vol}`);
+                });
+                parts.push(petParts.join('/'));
+            }
+            
+            let final = parts.filter(p => p && p.trim().length);
+            document.getElementById('resultText').innerHTML = `ОПХ (${final.join('/')})`;
+            document.getElementById('itemCount').innerHTML = `${selected.size} позиций`;
+        }
+        
+        function copyResult() {
+            let text = document.getElementById('resultText').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                let toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 1500);
+            }).catch(() => alert('Не удалось скопировать текст'));
+        }
+        
+        function clearAll() { selected.clear(); render(); update(); }
+        
+        function init() { 
+            render(); 
+            document.getElementById('blocksContainer').addEventListener('click', onClick); 
+            document.getElementById('copyBtn').addEventListener('click', copyResult); 
+            document.getElementById('clearBtn').addEventListener('click', clearAll); 
+            update(); 
+        }
+        
+        init();
+    </script>
+</body>
+</html>
