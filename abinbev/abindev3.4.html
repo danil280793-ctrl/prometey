@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="AI Assistant v2.0">
+    <meta name="version" content="v3.4">
+    <meta name="last-modified" content="2026-07-09">
+    <meta name="description" content="Конструктор строки товаров АБ ИнБев Эфес с поддержкой Эль Капулько в блоках 1, 5 и 8">
+    <title>Конструктор строки товаров</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1419;
+            --bg-card: #1a2028;
+            --bg-hover: #242d38;
+            --fg: #e8edf3;
+            --muted: #6b7d8f;
+            --accent: #00bfa5;
+            --accent-glow: rgba(0, 191, 165, 0.2);
+            --border: #2a3542;
+            --danger: #ff5c5c;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .bg-pattern {
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 191, 165, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(0, 191, 165, 0.03) 0%, transparent 35%);
+            background-attachment: fixed;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 191, 165, 0.4);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.6rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            user-select: none;
+            gap: 0.5rem;
+        }
+
+        .checkbox-wrapper:hover:not(.blocked) {
+            background: var(--bg-hover);
+        }
+
+        .checkbox-wrapper.checked {
+            background: var(--accent-glow);
+        }
+
+        .checkbox-wrapper.blocked {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .custom-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .checkbox-wrapper.checked .custom-checkbox {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .checkbox-wrapper.blocked .custom-checkbox {
+            border-color: var(--danger);
+            background: rgba(255, 92, 92, 0.1);
+        }
+
+        .check-icon {
+            width: 10px;
+            height: 10px;
+            stroke: var(--bg);
+            stroke-width: 3;
+            display: none;
+        }
+
+        .checkbox-wrapper.checked .check-icon {
+            display: block;
+        }
+
+        .item-name { 
+            flex: 1; 
+            font-size: 0.9rem; 
+            font-weight: 600;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .option-btn {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            background: var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .option-btn.active {
+            background: var(--accent);
+            color: var(--bg);
+            font-weight: 600;
+        }
+
+        .option-btn:hover:not(.active) {
+            border-color: var(--accent);
+            color: var(--fg);
+        }
+
+        .result-box {
+            background: linear-gradient(160deg, #1a2028 0%, #151b22 100%);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+        }
+
+        .btn {
+            padding: 0.65rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 191, 165, 0.25);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--accent);
+            color: var(--bg);
+            padding: 0.8rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in { animation: fadeInUp 0.4s ease forwards; }
+        .block-card { opacity: 0; animation: fadeInUp 0.4s ease forwards; }
+    </style>
+</head>
+<body class="bg-pattern">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 py-8">
+        <header class="mb-8 animate-in">
+            <h1 class="text-2xl md:text-3xl font-bold mb-1">Конструктор строки товаров <span class="text-sm" style="color: var(--muted)">v3.4</span></h1>
+            <p class="text-sm" style="color: var(--muted)">Формирование списка продукции АБ ИнБев Эфес — маска по наименованию</p>
+            <p class="text-xs mt-1" style="color: var(--muted)">Добавлена поддержка Эль Капулько в блоках 1, 5 и 8</p>
+        </header>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" id="blocksContainer"></div>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="sticky top-4">
+                    <div class="result-box">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted)">Результат</span>
+                            <span class="text-xs mono px-2 py-1 rounded" style="background: var(--accent-glow); color: var(--accent)" id="itemCount">0 позиций</span>
+                        </div>
+                        
+                        <div class="mono text-sm leading-relaxed mb-6 min-h-[60px]" style="color: var(--fg); word-break: break-all;" id="resultText">
+                            АБ ИнБев Эфес ()
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button class="btn btn-primary flex-1" onclick="copyResult()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Копировать
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearAll()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Очистить
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 card p-4">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--muted)">Логика</h3>
+                        <div class="space-y-2 text-xs" style="color: var(--muted)">
+                            <div>• <span class="mono" style="color:var(--fg)">ст / ж-б / пэт</span> — параметры товара. Нажатие переключает выбор.</div>
+                            <div>• <span class="mono" style="color:var(--fg)">Клик по названию</span> — включает/выключает ВСЕ параметры сразу.</div>
+                            <div>• Автообъединения (Блоки 6, 7, 8, 9, 10) работают как в оригинале.</div>
+                            <div>• <span class="mono" style="color:var(--fg)">Эль Капулько</span> — теперь в блоках 1 (ст), 5 (ж-б) и 8 (объединение).</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Скопировано!</div>
+
+    <script>
+        // ========================================================================
+        // ВЕРСИЯ: v3.4 — Добавлен Эль Капулько в блоки 1, 5 и 8
+        // МЕТАДАННЫЕ:
+        //   - Автор: AI Assistant v2.0
+        //   - Дата изменения: 2026-07-09
+        //   - Изменения: Эль Капулько теперь поддерживает стекло (0,4), банку (0,45) и автообъединение
+        // ========================================================================
+
+        // === Configuration ===
+        const blocksConfig = [
+            {
+                id: 1, title: 'Блок 1', suffix: 'ст 0,4', items: [
+                    { id: 'sidr_bon', name: 'Сидр Бон Сезон' },
+                    { id: 'el_capulco', name: 'Эль Капулько' },
+                    { id: 'essa_1', name: 'Эсса' }
+                ]
+            },
+            {
+                id: 2, title: 'Блок 2', suffix: 'ст 0,33', items: [
+                    { id: 'redds_2', name: 'Редд`с' },
+                    { id: 'abbe', name: 'Аббе' }
+                ]
+            },
+            {
+                id: 3, title: 'Блок 3', suffix: 'ст 0,44', items: [
+                    { id: 'stella_3', name: 'Стелла Артуа' },
+                    { id: 'hoegaarden_3', name: 'Хугарден' },
+                    { id: 'bud_3', name: 'Бад' }
+                ]
+            },
+            {
+                id: 4, title: 'Блок 4', suffix: 'ст 0,45', items: [
+                    { id: 'spaten_4', name: 'Шпатен' },
+                    { id: 'stary_mel_4', name: 'Старый Мельник' },
+                    { id: 'franz_4', name: 'Францисканер' },
+                    { id: 'efes_4', name: 'Эфес' },
+                    { id: 'red_finch_4', name: 'Ред Финч' }
+                ]
+            },
+            {
+                id: 5, title: 'Блок 5', suffix: 'ж-б 0,45', items: [
+                    { id: 'spaten_5', name: 'Шпатен' },
+                    { id: 'stary_mel_5', name: 'Старый Мельник' },
+                    { id: 'franz_5', name: 'Францисканер' },
+                    { id: 'efes_5', name: 'Эфес' },
+                    { id: 'zolotaya_bochka', name: 'Золотая Бочка' },
+                    { id: 'bely_medved_5', name: 'Белый Медведь' },
+                    { id: 'bud_5', name: 'Бад' },
+                    { id: 't9', name: 'Т9' },
+                    { id: 'hoegaarden_5', name: 'Хугарден' },
+                    { id: 'stella_5', name: 'Стелла Артуа' },
+                    { id: 'essa_5', name: 'Эсса' },
+                    { id: 'red_finch_5', name: 'Ред Финч' },
+                    { id: 'el_capulco_5', name: 'Эль Капулько' }
+                ]
+            },
+            {
+                id: 6, title: 'Блок 6', suffix: 'ст/ж-б 0,45', items: [
+                    { id: 'spaten_6', name: 'Шпатен' },
+                    { id: 'stary_mel_6', name: 'Старый Мельник' },
+                    { id: 'franz_6', name: 'Францисканер' },
+                    { id: 'efes_6', name: 'Эфес' },
+                    { id: 'red_finch_6', name: 'Ред Финч' }
+                ]
+            },
+            {
+                id: 7, title: 'Блок 7', suffix: 'ст 0,44/ж-б 0,45', lockOthers: true, items: [
+                    { id: 'stella_7', name: 'Стелла Артуа' },
+                    { id: 'hoegaarden_7', name: 'Хугарден' },
+                    { id: 'bud_7', name: 'Бад' }
+                ]
+            },
+            {
+                id: 8, title: 'Блок 8', suffix: 'ст 0,4/ж-б 0,45', lockOthers: true, items: [
+                    { id: 'essa_e', name: 'Эсса' },
+                    { id: 'el_capulco_e', name: 'Эль Капулько' }
+                ]
+            },
+            {
+                id: 9, title: 'Блок 9', suffix: 'ж-б 0,45/пэт 1,15', lockOthers: true, items: [
+                    { id: 'bely_medved_8', name: 'Белый Медведь' }
+                ]
+            },
+            {
+                id: 10, title: 'Блок 10', suffix: 'ст/ж-б 0,45/пэт 0,9', dynamic: true, items: [
+                    { id: 'stary_mel_9', name: 'Старый Мельник' }
+                ]
+            },
+            {
+                id: 11, title: 'Блок 11', suffix: 'пэт 0,9', items: [
+                    { id: 'stary_mel_10', name: 'Старый Мельник' },
+                    { id: 'hmel_sklad', name: 'Хмель&Солод' }
+                ]
+            },
+            {
+                id: 12, title: 'Блок 12', suffix: 'пэт 1,15', items: [
+                    { id: 'zhigulevskoe', name: 'Жигулевское' },
+                    { id: 'gold_mine', name: 'Голд Майн Бир' },
+                    { id: 'bagbeer', name: 'БагБир' },
+                    { id: 'bely_medved_11', name: 'Белый Медведь' }
+                ]
+            },
+            {
+                id: 13, title: 'Блок 13', suffix: 'пэт 1,3', items: [
+                    { id: 'lowenbrau', name: 'Ловенбрау' }
+                ]
+            }
+        ];
+
+        // === State ===
+        let selectedItems = new Set(); 
+        let blockedBy = {}; 
+        let block10Options = {}; 
+
+        // === МАСКА: какие параметры показывать у каждого товара ===
+        const productParams = {
+            'Сидр Бон Сезон': ['ст'],
+            'Эль Капулько': ['ст', 'ж-б'],
+            'Эсса': ['ст', 'ж-б'],
+            'Редд`с': ['ст'],
+            'Аббе': ['ст'],
+            'Стелла Артуа': ['ст', 'ж-б'],
+            'Хугарден': ['ст', 'ж-б'],
+            'Бад': ['ст', 'ж-б'],
+            'Шпатен': ['ст', 'ж-б'],
+            'Старый Мельник': ['ст', 'ж-б', 'пэт'],
+            'Францисканер': ['ст', 'ж-б'],
+            'Эфес': ['ст', 'ж-б'],
+            'Ред Финч': ['ст', 'ж-б'],
+            'Золотая Бочка': ['ж-б'],
+            'Белый Медведь': ['ж-б', 'пэт'],
+            'Т9': ['ж-б'],
+            'Жигулевское': ['пэт'],
+            'Голд Майн Бир': ['пэт'],
+            'БагБир': ['пэт'],
+            'Хмель&Солод': ['пэт'],
+            'Ловенбрау': ['пэт']
+        };
+
+        // === Маппинг параметра на прямой ID в blocksConfig ===
+        const directIdMap = {
+            'Сидр Бон Сезон': { 'ст': 'sidr_bon' },
+            'Эль Капулько': { 'ст': 'el_capulco', 'ж-б': 'el_capulco_5' },
+            'Эсса': { 'ст': 'essa_1', 'ж-б': 'essa_5' },
+            'Редд`с': { 'ст': 'redds_2' },
+            'Аббе': { 'ст': 'abbe' },
+            'Стелла Артуа': { 'ст': 'stella_3', 'ж-б': 'stella_5' },
+            'Хугарден': { 'ст': 'hoegaarden_3', 'ж-б': 'hoegaarden_5' },
+            'Бад': { 'ст': 'bud_3', 'ж-б': 'bud_5' },
+            'Шпатен': { 'ст': 'spaten_4', 'ж-б': 'spaten_5' },
+            'Старый Мельник': { 'ст': 'stary_mel_4', 'ж-б': 'stary_mel_5', 'пэт': 'stary_mel_10' },
+            'Францисканер': { 'ст': 'franz_4', 'ж-б': 'franz_5' },
+            'Эфес': { 'ст': 'efes_4', 'ж-б': 'efes_5' },
+            'Ред Финч': { 'ст': 'red_finch_4', 'ж-б': 'red_finch_5' },
+            'Золотая Бочка': { 'ж-б': 'zolotaya_bochka' },
+            'Белый Медведь': { 'ж-б': 'bely_medved_5', 'пэт': 'bely_medved_11' },
+            'Т9': { 'ж-б': 't9' },
+            'Жигулевское': { 'пэт': 'zhigulevskoe' },
+            'Голд Майн Бир': { 'пэт': 'gold_mine' },
+            'БагБир': { 'пэт': 'bagbeer' },
+            'Хмель&Солод': { 'пэт': 'hmel_sklad' },
+            'Ловенбрау': { 'пэт': 'lowenbrau' }
+        };
+
+        function getDirectId(name, param) {
+            return directIdMap[name]?.[param];
+        }
+
+        // === Проверка активности параметра (точная) ===
+        function isParamActive(name, param) {
+            if (name === 'Сидр Бон Сезон') return param === 'ст' && selectedItems.has('sidr_bon');
+            if (name === 'Эль Капулько') {
+                if (param === 'ст') return selectedItems.has('el_capulco') || selectedItems.has('el_capulco_e');
+                if (param === 'ж-б') return selectedItems.has('el_capulco_5') || selectedItems.has('el_capulco_e');
+            }
+            if (name === 'Эсса') {
+                if (param === 'ст') return selectedItems.has('essa_1') || selectedItems.has('essa_e');
+                if (param === 'ж-б') return selectedItems.has('essa_5') || selectedItems.has('essa_e');
+            }
+            if (name === 'Редд`с') return param === 'ст' && selectedItems.has('redds_2');
+            if (name === 'Аббе') return param === 'ст' && selectedItems.has('abbe');
+            if (name === 'Стелла Артуа') {
+                if (param === 'ст') return selectedItems.has('stella_3') || selectedItems.has('stella_7');
+                if (param === 'ж-б') return selectedItems.has('stella_5') || selectedItems.has('stella_7');
+            }
+            if (name === 'Хугарден') {
+                if (param === 'ст') return selectedItems.has('hoegaarden_3') || selectedItems.has('hoegaarden_7');
+                if (param === 'ж-б') return selectedItems.has('hoegaarden_5') || selectedItems.has('hoegaarden_7');
+            }
+            if (name === 'Бад') {
+                if (param === 'ст') return selectedItems.has('bud_3') || selectedItems.has('bud_7');
+                if (param === 'ж-б') return selectedItems.has('bud_5') || selectedItems.has('bud_7');
+            }
+            if (name === 'Шпатен') {
+                if (param === 'ст') return selectedItems.has('spaten_4') || selectedItems.has('spaten_6');
+                if (param === 'ж-б') return selectedItems.has('spaten_5') || selectedItems.has('spaten_6');
+            }
+            if (name === 'Старый Мельник') {
+                const opts = block10Options['stary_mel_9'] || [];
+                if (param === 'ст') return selectedItems.has('stary_mel_4') || selectedItems.has('stary_mel_6') || (selectedItems.has('stary_mel_9') && opts.includes('ст'));
+                if (param === 'ж-б') return selectedItems.has('stary_mel_5') || selectedItems.has('stary_mel_6') || (selectedItems.has('stary_mel_9') && opts.includes('ж-б'));
+                if (param === 'пэт') return selectedItems.has('stary_mel_10') || selectedItems.has('stary_mel_9');
+            }
+            if (name === 'Францисканер') {
+                if (param === 'ст') return selectedItems.has('franz_4') || selectedItems.has('franz_6');
+                if (param === 'ж-б') return selectedItems.has('franz_5') || selectedItems.has('franz_6');
+            }
+            if (name === 'Эфес') {
+                if (param === 'ст') return selectedItems.has('efes_4') || selectedItems.has('efes_6');
+                if (param === 'ж-б') return selectedItems.has('efes_5') || selectedItems.has('efes_6');
+            }
+            if (name === 'Ред Финч') {
+                if (param === 'ст') return selectedItems.has('red_finch_4') || selectedItems.has('red_finch_6');
+                if (param === 'ж-б') return selectedItems.has('red_finch_5') || selectedItems.has('red_finch_6');
+            }
+            if (name === 'Золотая Бочка') return param === 'ж-б' && selectedItems.has('zolotaya_bochka');
+            if (name === 'Белый Медведь') {
+                if (param === 'ж-б') return selectedItems.has('bely_medved_5') || selectedItems.has('bely_medved_8');
+                if (param === 'пэт') return selectedItems.has('bely_medved_11') || selectedItems.has('bely_medved_8');
+            }
+            if (name === 'Т9') return param === 'ж-б' && selectedItems.has('t9');
+            if (name === 'Жигулевское') return param === 'пэт' && selectedItems.has('zhigulevskoe');
+            if (name === 'Голд Майн Бир') return param === 'пэт' && selectedItems.has('gold_mine');
+            if (name === 'БагБир') return param === 'пэт' && selectedItems.has('bagbeer');
+            if (name === 'Хмель&Солод') return param === 'пэт' && selectedItems.has('hmel_sklad');
+            if (name === 'Ловенбрау') return param === 'пэт' && selectedItems.has('lowenbrau');
+            return false;
+        }
+
+        // === Проверка: все параметры товара активны? ===
+        function isAllParamsActive(name) {
+            const params = productParams[name] || [];
+            return params.length > 0 && params.every(p => isParamActive(name, p));
+        }
+
+        // === Переключение ВСЕХ параметров товара ===
+        function toggleAllParams(name) {
+            const params = productParams[name];
+            if (!params) return;
+            
+            const allActive = isAllParamsActive(name);
+            
+            if (allActive) {
+                clearProduct(name);
+            } else {
+                params.forEach(param => {
+                    if (!isParamActive(name, param)) {
+                        toggleParamInternal(name, param);
+                    }
+                });
+                checkAutoMerges();
+                renderBlocks();
+                updateResult();
+            }
+        }
+
+        // === Внутреннее переключение без ререндера ===
+        function toggleParamInternal(name, param) {
+            if (name === 'Эль Капулько') {
+                if (param === 'ст' && !selectedItems.has('el_capulco') && !selectedItems.has('el_capulco_e')) {
+                    selectedItems.add('el_capulco');
+                }
+                if (param === 'ж-б' && !selectedItems.has('el_capulco_5') && !selectedItems.has('el_capulco_e')) {
+                    selectedItems.add('el_capulco_5');
+                }
+            } else if (name === 'Старый Мельник') {
+                if (param === 'ст') {
+                    if (!selectedItems.has('stary_mel_4') && !selectedItems.has('stary_mel_6') && !selectedItems.has('stary_mel_9')) {
+                        selectedItems.add('stary_mel_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (!selectedItems.has('stary_mel_5') && !selectedItems.has('stary_mel_6') && !selectedItems.has('stary_mel_9')) {
+                        selectedItems.add('stary_mel_5');
+                    }
+                } else if (param === 'пэт') {
+                    if (!selectedItems.has('stary_mel_10') && !selectedItems.has('stary_mel_9')) {
+                        selectedItems.add('stary_mel_10');
+                    }
+                }
+            } else if (name === 'Эсса') {
+                if (param === 'ст' && !selectedItems.has('essa_1') && !selectedItems.has('essa_e')) selectedItems.add('essa_1');
+                if (param === 'ж-б' && !selectedItems.has('essa_5') && !selectedItems.has('essa_e')) selectedItems.add('essa_5');
+            } else if (name === 'Стелла Артуа') {
+                if (param === 'ст' && !selectedItems.has('stella_3') && !selectedItems.has('stella_7')) selectedItems.add('stella_3');
+                if (param === 'ж-б' && !selectedItems.has('stella_5') && !selectedItems.has('stella_7')) selectedItems.add('stella_5');
+            } else if (name === 'Хугарден') {
+                if (param === 'ст' && !selectedItems.has('hoegaarden_3') && !selectedItems.has('hoegaarden_7')) selectedItems.add('hoegaarden_3');
+                if (param === 'ж-б' && !selectedItems.has('hoegaarden_5') && !selectedItems.has('hoegaarden_7')) selectedItems.add('hoegaarden_5');
+            } else if (name === 'Бад') {
+                if (param === 'ст' && !selectedItems.has('bud_3') && !selectedItems.has('bud_7')) selectedItems.add('bud_3');
+                if (param === 'ж-б' && !selectedItems.has('bud_5') && !selectedItems.has('bud_7')) selectedItems.add('bud_5');
+            } else if (name === 'Шпатен') {
+                if (param === 'ст' && !selectedItems.has('spaten_4') && !selectedItems.has('spaten_6')) selectedItems.add('spaten_4');
+                if (param === 'ж-б' && !selectedItems.has('spaten_5') && !selectedItems.has('spaten_6')) selectedItems.add('spaten_5');
+            } else if (name === 'Францисканер') {
+                if (param === 'ст' && !selectedItems.has('franz_4') && !selectedItems.has('franz_6')) selectedItems.add('franz_4');
+                if (param === 'ж-б' && !selectedItems.has('franz_5') && !selectedItems.has('franz_6')) selectedItems.add('franz_5');
+            } else if (name === 'Эфес') {
+                if (param === 'ст' && !selectedItems.has('efes_4') && !selectedItems.has('efes_6')) selectedItems.add('efes_4');
+                if (param === 'ж-б' && !selectedItems.has('efes_5') && !selectedItems.has('efes_6')) selectedItems.add('efes_5');
+            } else if (name === 'Ред Финч') {
+                if (param === 'ст' && !selectedItems.has('red_finch_4') && !selectedItems.has('red_finch_6')) selectedItems.add('red_finch_4');
+                if (param === 'ж-б' && !selectedItems.has('red_finch_5') && !selectedItems.has('red_finch_6')) selectedItems.add('red_finch_5');
+            } else if (name === 'Белый Медведь') {
+                if (param === 'ж-б' && !selectedItems.has('bely_medved_5') && !selectedItems.has('bely_medved_8')) selectedItems.add('bely_medved_5');
+                if (param === 'пэт' && !selectedItems.has('bely_medved_11') && !selectedItems.has('bely_medved_8')) selectedItems.add('bely_medved_11');
+            } else {
+                const id = getDirectId(name, param);
+                if (id && !selectedItems.has(id)) selectedItems.add(id);
+            }
+        }
+
+        // === Переключение ОДНОГО параметра ===
+        function toggleParam(name, param) {
+            if (name === 'Эль Капулько') {
+                if (param === 'ст') {
+                    if (selectedItems.has('el_capulco_e')) {
+                        selectedItems.delete('el_capulco_e');
+                        unblockItems('el_capulco_e');
+                        selectedItems.add('el_capulco_5');
+                    } else if (selectedItems.has('el_capulco')) {
+                        selectedItems.delete('el_capulco');
+                        unblockItems('el_capulco');
+                    } else {
+                        selectedItems.add('el_capulco');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('el_capulco_e')) {
+                        selectedItems.delete('el_capulco_e');
+                        unblockItems('el_capulco_e');
+                        selectedItems.add('el_capulco');
+                    } else if (selectedItems.has('el_capulco_5')) {
+                        selectedItems.delete('el_capulco_5');
+                        unblockItems('el_capulco_5');
+                    } else {
+                        selectedItems.add('el_capulco_5');
+                    }
+                }
+            } else if (name === 'Старый Мельник') {
+                const sm6 = selectedItems.has('stary_mel_6');
+                const sm9 = selectedItems.has('stary_mel_9');
+                const sm4 = selectedItems.has('stary_mel_4');
+                const sm5 = selectedItems.has('stary_mel_5');
+                const sm10 = selectedItems.has('stary_mel_10');
+                const opts9 = block10Options['stary_mel_9'] || [];
+                
+                if (param === 'ст') {
+                    if (sm9 && opts9.includes('ст')) {
+                        const newOpts = opts9.filter(o => o !== 'ст');
+                        if (newOpts.length === 0) {
+                            selectedItems.delete('stary_mel_9');
+                            unblockItems('stary_mel_9');
+                            block10Options['stary_mel_9'] = [];
+                        } else {
+                            block10Options['stary_mel_9'] = newOpts;
+                        }
+                    } else if (sm6) {
+                        selectedItems.delete('stary_mel_6');
+                        unblockItems('stary_mel_6');
+                        selectedItems.add('stary_mel_5');
+                    } else if (sm4) {
+                        selectedItems.delete('stary_mel_4');
+                        unblockItems('stary_mel_4');
+                    } else {
+                        selectedItems.add('stary_mel_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (sm9 && opts9.includes('ж-б')) {
+                        const newOpts = opts9.filter(o => o !== 'ж-б');
+                        if (newOpts.length === 0) {
+                            selectedItems.delete('stary_mel_9');
+                            unblockItems('stary_mel_9');
+                            block10Options['stary_mel_9'] = [];
+                        } else {
+                            block10Options['stary_mel_9'] = newOpts;
+                        }
+                    } else if (sm6) {
+                        selectedItems.delete('stary_mel_6');
+                        unblockItems('stary_mel_6');
+                        selectedItems.add('stary_mel_4');
+                    } else if (sm5) {
+                        selectedItems.delete('stary_mel_5');
+                        unblockItems('stary_mel_5');
+                    } else {
+                        selectedItems.add('stary_mel_5');
+                    }
+                } else if (param === 'пэт') {
+                    if (sm9) {
+                        selectedItems.delete('stary_mel_9');
+                        unblockItems('stary_mel_9');
+                        block10Options['stary_mel_9'] = [];
+                    } else if (sm10) {
+                        selectedItems.delete('stary_mel_10');
+                        unblockItems('stary_mel_10');
+                    } else {
+                        selectedItems.add('stary_mel_10');
+                    }
+                }
+            } else if (name === 'Эсса') {
+                if (param === 'ст') {
+                    if (selectedItems.has('essa_e')) {
+                        selectedItems.delete('essa_e');
+                        unblockItems('essa_e');
+                        selectedItems.add('essa_5');
+                    } else if (selectedItems.has('essa_1')) {
+                        selectedItems.delete('essa_1');
+                        unblockItems('essa_1');
+                    } else {
+                        selectedItems.add('essa_1');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('essa_e')) {
+                        selectedItems.delete('essa_e');
+                        unblockItems('essa_e');
+                        selectedItems.add('essa_1');
+                    } else if (selectedItems.has('essa_5')) {
+                        selectedItems.delete('essa_5');
+                        unblockItems('essa_5');
+                    } else {
+                        selectedItems.add('essa_5');
+                    }
+                }
+            } else if (name === 'Стелла Артуа') {
+                if (param === 'ст') {
+                    if (selectedItems.has('stella_7')) {
+                        selectedItems.delete('stella_7');
+                        unblockItems('stella_7');
+                        selectedItems.add('stella_5');
+                    } else if (selectedItems.has('stella_3')) {
+                        selectedItems.delete('stella_3');
+                        unblockItems('stella_3');
+                    } else {
+                        selectedItems.add('stella_3');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('stella_7')) {
+                        selectedItems.delete('stella_7');
+                        unblockItems('stella_7');
+                        selectedItems.add('stella_3');
+                    } else if (selectedItems.has('stella_5')) {
+                        selectedItems.delete('stella_5');
+                        unblockItems('stella_5');
+                    } else {
+                        selectedItems.add('stella_5');
+                    }
+                }
+            } else if (name === 'Хугарден') {
+                if (param === 'ст') {
+                    if (selectedItems.has('hoegaarden_7')) {
+                        selectedItems.delete('hoegaarden_7');
+                        unblockItems('hoegaarden_7');
+                        selectedItems.add('hoegaarden_5');
+                    } else if (selectedItems.has('hoegaarden_3')) {
+                        selectedItems.delete('hoegaarden_3');
+                        unblockItems('hoegaarden_3');
+                    } else {
+                        selectedItems.add('hoegaarden_3');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('hoegaarden_7')) {
+                        selectedItems.delete('hoegaarden_7');
+                        unblockItems('hoegaarden_7');
+                        selectedItems.add('hoegaarden_3');
+                    } else if (selectedItems.has('hoegaarden_5')) {
+                        selectedItems.delete('hoegaarden_5');
+                        unblockItems('hoegaarden_5');
+                    } else {
+                        selectedItems.add('hoegaarden_5');
+                    }
+                }
+            } else if (name === 'Бад') {
+                if (param === 'ст') {
+                    if (selectedItems.has('bud_7')) {
+                        selectedItems.delete('bud_7');
+                        unblockItems('bud_7');
+                        selectedItems.add('bud_5');
+                    } else if (selectedItems.has('bud_3')) {
+                        selectedItems.delete('bud_3');
+                        unblockItems('bud_3');
+                    } else {
+                        selectedItems.add('bud_3');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('bud_7')) {
+                        selectedItems.delete('bud_7');
+                        unblockItems('bud_7');
+                        selectedItems.add('bud_3');
+                    } else if (selectedItems.has('bud_5')) {
+                        selectedItems.delete('bud_5');
+                        unblockItems('bud_5');
+                    } else {
+                        selectedItems.add('bud_5');
+                    }
+                }
+            } else if (name === 'Шпатен') {
+                if (param === 'ст') {
+                    if (selectedItems.has('spaten_6')) {
+                        selectedItems.delete('spaten_6');
+                        unblockItems('spaten_6');
+                        selectedItems.add('spaten_5');
+                    } else if (selectedItems.has('spaten_4')) {
+                        selectedItems.delete('spaten_4');
+                        unblockItems('spaten_4');
+                    } else {
+                        selectedItems.add('spaten_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('spaten_6')) {
+                        selectedItems.delete('spaten_6');
+                        unblockItems('spaten_6');
+                        selectedItems.add('spaten_4');
+                    } else if (selectedItems.has('spaten_5')) {
+                        selectedItems.delete('spaten_5');
+                        unblockItems('spaten_5');
+                    } else {
+                        selectedItems.add('spaten_5');
+                    }
+                }
+            } else if (name === 'Францисканер') {
+                if (param === 'ст') {
+                    if (selectedItems.has('franz_6')) {
+                        selectedItems.delete('franz_6');
+                        unblockItems('franz_6');
+                        selectedItems.add('franz_5');
+                    } else if (selectedItems.has('franz_4')) {
+                        selectedItems.delete('franz_4');
+                        unblockItems('franz_4');
+                    } else {
+                        selectedItems.add('franz_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('franz_6')) {
+                        selectedItems.delete('franz_6');
+                        unblockItems('franz_6');
+                        selectedItems.add('franz_4');
+                    } else if (selectedItems.has('franz_5')) {
+                        selectedItems.delete('franz_5');
+                        unblockItems('franz_5');
+                    } else {
+                        selectedItems.add('franz_5');
+                    }
+                }
+            } else if (name === 'Эфес') {
+                if (param === 'ст') {
+                    if (selectedItems.has('efes_6')) {
+                        selectedItems.delete('efes_6');
+                        unblockItems('efes_6');
+                        selectedItems.add('efes_5');
+                    } else if (selectedItems.has('efes_4')) {
+                        selectedItems.delete('efes_4');
+                        unblockItems('efes_4');
+                    } else {
+                        selectedItems.add('efes_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('efes_6')) {
+                        selectedItems.delete('efes_6');
+                        unblockItems('efes_6');
+                        selectedItems.add('efes_4');
+                    } else if (selectedItems.has('efes_5')) {
+                        selectedItems.delete('efes_5');
+                        unblockItems('efes_5');
+                    } else {
+                        selectedItems.add('efes_5');
+                    }
+                }
+            } else if (name === 'Ред Финч') {
+                if (param === 'ст') {
+                    if (selectedItems.has('red_finch_6')) {
+                        selectedItems.delete('red_finch_6');
+                        unblockItems('red_finch_6');
+                        selectedItems.add('red_finch_5');
+                    } else if (selectedItems.has('red_finch_4')) {
+                        selectedItems.delete('red_finch_4');
+                        unblockItems('red_finch_4');
+                    } else {
+                        selectedItems.add('red_finch_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('red_finch_6')) {
+                        selectedItems.delete('red_finch_6');
+                        unblockItems('red_finch_6');
+                        selectedItems.add('red_finch_4');
+                    } else if (selectedItems.has('red_finch_5')) {
+                        selectedItems.delete('red_finch_5');
+                        unblockItems('red_finch_5');
+                    } else {
+                        selectedItems.add('red_finch_5');
+                    }
+                }
+            } else if (name === 'Белый Медведь') {
+                if (param === 'ж-б') {
+                    if (selectedItems.has('bely_medved_8')) {
+                        selectedItems.delete('bely_medved_8');
+                        unblockItems('bely_medved_8');
+                        selectedItems.add('bely_medved_11');
+                    } else if (selectedItems.has('bely_medved_5')) {
+                        selectedItems.delete('bely_medved_5');
+                        unblockItems('bely_medved_5');
+                    } else {
+                        selectedItems.add('bely_medved_5');
+                    }
+                } else if (param === 'пэт') {
+                    if (selectedItems.has('bely_medved_8')) {
+                        selectedItems.delete('bely_medved_8');
+                        unblockItems('bely_medved_8');
+                        selectedItems.add('bely_medved_5');
+                    } else if (selectedItems.has('bely_medved_11')) {
+                        selectedItems.delete('bely_medved_11');
+                        unblockItems('bely_medved_11');
+                    } else {
+                        selectedItems.add('bely_medved_11');
+                    }
+                }
+            } else {
+                const id = getDirectId(name, param);
+                if (id) {
+                    if (selectedItems.has(id)) {
+                        selectedItems.delete(id);
+                        unblockItems(id);
+                    } else {
+                        selectedItems.add(id);
+                    }
+                }
+            }
+            
+            checkAutoMerges();
+            renderBlocks();
+            updateResult();
+        }
+
+        function clearProduct(name) {
+            if (name === 'Эль Капулько') {
+                ['el_capulco', 'el_capulco_5', 'el_capulco_e'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Старый Мельник') {
+                ['stary_mel_4', 'stary_mel_5', 'stary_mel_6', 'stary_mel_9', 'stary_mel_10'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+                block10Options['stary_mel_9'] = [];
+            } else if (name === 'Эсса') {
+                ['essa_1', 'essa_5', 'essa_e'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Стелла Артуа') {
+                ['stella_3', 'stella_5', 'stella_7'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Хугарден') {
+                ['hoegaarden_3', 'hoegaarden_5', 'hoegaarden_7'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Бад') {
+                ['bud_3', 'bud_5', 'bud_7'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Шпатен') {
+                ['spaten_4', 'spaten_5', 'spaten_6'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Францисканер') {
+                ['franz_4', 'franz_5', 'franz_6'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Эфес') {
+                ['efes_4', 'efes_5', 'efes_6'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Ред Финч') {
+                ['red_finch_4', 'red_finch_5', 'red_finch_6'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Белый Медведь') {
+                ['bely_medved_5', 'bely_medved_8', 'bely_medved_11'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else {
+                const simpleMap = {
+                    'Сидр Бон Сезон': ['sidr_bon'],
+                    'Редд`с': ['redds_2'],
+                    'Аббе': ['abbe'],
+                    'Золотая Бочка': ['zolotaya_bochka'],
+                    'Т9': ['t9'],
+                    'Жигулевское': ['zhigulevskoe'],
+                    'Голд Майн Бир': ['gold_mine'],
+                    'БагБир': ['bagbeer'],
+                    'Хмель&Солод': ['hmel_sklad'],
+                    'Ловенбрау': ['lowenbrau']
+                };
+                (simpleMap[name] || []).forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            }
+            renderBlocks();
+            updateResult();
+        }
+
+        // === Logic ===
+        function init() {
+            renderBlocks();
+            document.getElementById('blocksContainer').addEventListener('click', handleContainerClick);
+            updateResult();
+        }
+
+        // === Render — МАСКА по наименованию ===
+        function renderBlocks() {
+            const container = document.getElementById('blocksContainer');
+            
+            const seen = new Set();
+            const names = [];
+            blocksConfig.forEach(b => b.items.forEach(i => {
+                if (!seen.has(i.name)) { seen.add(i.name); names.push(i.name); }
+            }));
+            
+            let html = '';
+            names.forEach((name, index) => {
+                const params = productParams[name] || [];
+                const hasAny = params.some(p => isParamActive(name, p));
+                const allActive = isAllParamsActive(name);
+                
+                let buttonsHtml = '';
+                ['ст', 'ж-б', 'пэт'].forEach(param => {
+                    if (!params.includes(param)) return;
+                    const isActive = isParamActive(name, param);
+                    buttonsHtml += `
+                        <div class="option-btn ${isActive ? 'active' : ''}" 
+                             data-name="${name}" data-param="${param}">${param}</div>
+                    `;
+                });
+                
+                html += `
+                    <div class="card p-3 block-card" style="animation-delay: ${index * 40}ms">
+                        <div class="checkbox-wrapper ${hasAny ? 'checked' : ''}" data-name="${name}">
+                            <span class="custom-checkbox">
+                                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                            <span class="item-name">${name}</span>
+                            <div class="options-container">
+                                ${buttonsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // === Interaction ===
+        function handleContainerClick(e) {
+            const optBtn = e.target.closest('.option-btn');
+            if (optBtn) {
+                const name = optBtn.dataset.name;
+                const param = optBtn.dataset.param;
+                if (name && param) {
+                    toggleParam(name, param);
+                }
+                return;
+            }
+
+            const wrapper = e.target.closest('.checkbox-wrapper');
+            if (!wrapper || !wrapper.dataset.name) return;
+            
+            const name = wrapper.dataset.name;
+            toggleAllParams(name);
+        }
+
+        // === Ниже — оригинальная логика без изменений ===
+
+        function runBlockSpecificLogic(itemId, blockId) {
+            if (blockId === 10) {
+                 blockItems(['stary_mel_4', 'stary_mel_5', 'stary_mel_6', 'stary_mel_10'], itemId);
+            }
+        }
+
+        function checkAutoMerges() {
+            // 1. Essa
+            if (selectedItems.has('essa_1') && selectedItems.has('essa_5')) {
+                selectedItems.delete('essa_1');
+                selectedItems.delete('essa_5');
+                selectedItems.add('essa_e');
+                blockConflictingItems('essa_e', 8);
+            }
+
+            // 2. Эль Капулько
+            if (selectedItems.has('el_capulco') && selectedItems.has('el_capulco_5')) {
+                selectedItems.delete('el_capulco');
+                selectedItems.delete('el_capulco_5');
+                selectedItems.add('el_capulco_e');
+                blockConflictingItems('el_capulco_e', 8);
+            }
+
+            // 3. Stella/Hoegaarden/Bud
+            const groupSHB = [
+                { id3: 'stella_3', id5: 'stella_5', id7: 'stella_7' },
+                { id3: 'hoegaarden_3', id5: 'hoegaarden_5', id7: 'hoegaarden_7' },
+                { id3: 'bud_3', id5: 'bud_5', id7: 'bud_7' }
+            ];
+
+            groupSHB.forEach(item => {
+                if (selectedItems.has(item.id3) && selectedItems.has(item.id5)) {
+                    selectedItems.delete(item.id3);
+                    selectedItems.delete(item.id5);
+                    selectedItems.add(item.id7);
+                    blockConflictingItems(item.id7, 7);
+                }
+            });
+
+            // 4. Spaten/Franz/Efes/Red Finch (4 + 5 -> 6)
+            const groupSFE = [
+                { id4: 'spaten_4', id5: 'spaten_5', id6: 'spaten_6' },
+                { id4: 'franz_4', id5: 'franz_5', id6: 'franz_6' },
+                { id4: 'efes_4', id5: 'efes_5', id6: 'efes_6' },
+                { id4: 'red_finch_4', id5: 'red_finch_5', id6: 'red_finch_6' }
+            ];
+
+            groupSFE.forEach(item => {
+                if (selectedItems.has(item.id4) && selectedItems.has(item.id5)) {
+                    selectedItems.delete(item.id4);
+                    selectedItems.delete(item.id5);
+                    selectedItems.add(item.id6);
+                    blockConflictingItems(item.id6, 6);
+                }
+                else if (selectedItems.has(item.id6)) {
+                    blockItems([item.id4, item.id5], item.id6);
+                }
+            });
+
+            // 5. Stary Melnik Complex Logic
+            const SM = {
+                b4: 'stary_mel_4', b5: 'stary_mel_5', b6: 'stary_mel_6',
+                b10: 'stary_mel_9', b11: 'stary_mel_10'
+            };
+
+            const hasGlass = selectedItems.has(SM.b4) || selectedItems.has(SM.b5) || selectedItems.has(SM.b6);
+            const hasPet = selectedItems.has(SM.b11);
+
+            if (hasGlass && hasPet) {
+                let opts = [];
+                if (selectedItems.has(SM.b4)) opts.push('ст');
+                if (selectedItems.has(SM.b5)) opts.push('ж-б');
+                if (selectedItems.has(SM.b6)) opts.push('ст', 'ж-б');
+
+                [SM.b4, SM.b5, SM.b6, SM.b11].forEach(id => selectedItems.delete(id));
+                selectedItems.add(SM.b10);
+                
+                block10Options[SM.b10] = opts;
+                blockItems([SM.b4, SM.b5, SM.b6, SM.b11], SM.b10);
+            }
+            else if (selectedItems.has(SM.b4) && selectedItems.has(SM.b5)) {
+                selectedItems.delete(SM.b4);
+                selectedItems.delete(SM.b5);
+                selectedItems.add(SM.b6);
+                blockItems([SM.b4, SM.b5], SM.b6);
+            }
+            else if (selectedItems.has(SM.b6)) {
+                 blockItems([SM.b4, SM.b5], SM.b6);
+                 if (blockedBy[SM.b11] === SM.b6) delete blockedBy[SM.b11];
+            }
+
+            // 6. Bely Medved
+            if (selectedItems.has('bely_medved_5') && selectedItems.has('bely_medved_11')) {
+                selectedItems.delete('bely_medved_5');
+                selectedItems.delete('bely_medved_11');
+                selectedItems.add('bely_medved_8');
+                blockConflictingItems('bely_medved_8', 9);
+            }
+        }
+
+        function blockItems(itemIds, sourceId) {
+            itemIds.forEach(id => {
+                selectedItems.delete(id);
+                if (!blockedBy[id]) blockedBy[id] = sourceId;
+            });
+        }
+
+        function blockConflictingItems(itemId, sourceBlockId) {
+            let itemName = '';
+            blocksConfig.forEach(b => {
+                const found = b.items.find(i => i.id === itemId);
+                if (found) itemName = found.name;
+            });
+
+            if (!itemName) return;
+
+            blocksConfig.forEach(b => {
+                if (b.id === sourceBlockId) return;
+                
+                b.items.forEach(item => {
+                    if (item.name === itemName) {
+                        if (!blockedBy[item.id]) {
+                            blockedBy[item.id] = itemId;
+                        }
+                        selectedItems.delete(item.id);
+                    }
+                });
+            });
+        }
+
+        function unblockItems(itemId) {
+            for (const key in blockedBy) {
+                if (blockedBy[key] === itemId) {
+                    delete blockedBy[key];
+                }
+            }
+        }
+
+        function updateResult() {
+            let parts = [];
+
+            const getSelNames = (block) => block.items.filter(i => selectedItems.has(i.id)).map(i => i.name).join('/');
+            const hasItems = (block) => block.items.some(i => selectedItems.has(i.id));
+
+            // === 1. Blocks 1-4 ===
+            const group14Ids = [1, 2, 3, 4];
+            let lastActiveBlock14 = null;
+            
+            group14Ids.forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (hasItems(block)) lastActiveBlock14 = block;
+            });
+
+            group14Ids.forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (!hasItems(block)) return;
+
+                const names = getSelNames(block);
+                let suffix = block.suffix;
+
+                const isLast14 = (block === lastActiveBlock14);
+                
+                if (bid === 4) {
+                    return; 
+                } else {
+                    if (isLast14) {
+                        suffix = block.suffix; 
+                    } else {
+                        suffix = block.suffix.replace('ст ', '');
+                    }
+                    parts.push(`${names} ${suffix}`.trim());
+                }
+            });
+
+            // === 2. Blocks 4, 5, 6 (Volume 0.45) ===
+            const group456Ids = [4, 5, 6];
+            let lastActiveBlock456 = null;
+
+            group456Ids.forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (hasItems(block)) lastActiveBlock456 = block;
+            });
+
+            group456Ids.forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (!hasItems(block)) return;
+
+                const names = getSelNames(block);
+                let suffix = block.suffix; 
+
+                const isLast456 = (block === lastActiveBlock456);
+                const isLast14 = (block === lastActiveBlock14);
+
+                if (bid === 4) {
+                    let s4 = "";
+                    if (isLast14) s4 += "ст";
+                    if (isLast456) s4 += (s4 ? " " : "") + "0,45";
+                    suffix = s4;
+                } else {
+                    if (!isLast456) {
+                        suffix = suffix.replace(' 0,45', '').replace('0,45', '').trim();
+                    }
+                }
+
+                parts.push(`${names} ${suffix}`.trim());
+            });
+
+            // === 3. Blocks 7, 8, 9 ===
+            [7, 8, 9].forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (!hasItems(block)) return;
+                parts.push(`${getSelNames(block)} ${block.suffix}`);
+            });
+
+            // === 4. Block 10 (Dynamic) ===
+            const block10 = blocksConfig.find(b => b.id === 10);
+            block10.items.forEach(item => {
+                if (selectedItems.has(item.id)) {
+                    const opts = block10Options[item.id] || [];
+                    if (opts.length === 0) return; 
+
+                    opts.sort((a, b) => {
+                        if(a === 'ст' && b === 'ж-б') return -1;
+                        if(a === 'ж-б' && b === 'ст') return 1;
+                        return 0;
+                    });
+
+                    const typeStr = opts.join('/');
+                    parts.push(`${item.name} ${typeStr} 0,45/пэт 0,9`);
+                }
+            });
+
+            // === 5. Blocks 11-13 (PET) ===
+            const groupPetIds = [11, 12, 13];
+            let lastActivePetBlock = null;
+
+            groupPetIds.forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (hasItems(block)) lastActivePetBlock = block;
+            });
+
+            groupPetIds.forEach(bid => {
+                const block = blocksConfig.find(b => b.id === bid);
+                if (!hasItems(block)) return;
+
+                const names = getSelNames(block);
+                
+                if (block === lastActivePetBlock) {
+                    parts.push(`${names} ${block.suffix}`);
+                } else {
+                    const suffix = block.suffix.replace('пэт ', '');
+                    parts.push(`${names} ${suffix}`);
+                }
+            });
+
+            const resultStr = parts.filter(p => p && !p.endsWith(' ')).join('/');
+            document.getElementById('resultText').textContent = `АБ ИнБев Эфес (${resultStr})`;
+            
+            const count = selectedItems.size;
+            document.getElementById('itemCount').textContent = `${count} позици${count === 1 ? 'ция' : count > 1 && count < 5 ? 'ции' : 'ций'}`;
+        }
+
+        function copyResult() {
+            const text = document.getElementById('resultText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 1500);
+            });
+        }
+
+        function clearAll() {
+            selectedItems.clear();
+            blockedBy = {};
+            block10Options = {};
+            renderBlocks();
+            updateResult();
+        }
+
+        init();
+    </script>
+</body>
+</html>
