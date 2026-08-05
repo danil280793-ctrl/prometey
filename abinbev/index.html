@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="AI Assistant v2.0">
-    <meta name="version" content="v3.5">
-    <meta name="last-modified" content="2026-07-12">
-    <meta name="description" content="Конструктор строки товаров АБ ИнБев Эфес с поддержкой Эль Капулько и Велкопоповицкий Козел">
+    <meta name="version" content="v3.8">
+    <meta name="last-modified" content="2026-08-05">
+    <meta name="description" content="Конструктор строки товаров АБ ИнБев Эфес с поддержкой Эль Капулько, Велкопоповицкий Козел, Амстердам и Дактейл">
     <meta name="reference" content="https://chat.deepseek.com/share/y5s0m44ad6denfpg60">
     <title>Конструктор строки товаров</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ============================================================
-           ДИЗАЙН-СИСТЕМА v3.5
+           ДИЗАЙН-СИСТЕМА v3.8
            ============================================================ */
 
         :root {
@@ -444,13 +444,13 @@
         <header class="animate-in" style="margin-bottom: 20px;">
             <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 2px; color: var(--fg-primary);">
                 Конструктор строки товаров 
-                <span style="font-size: 14px; font-weight: 500; color: var(--fg-muted);">v3.5</span>
+                <span style="font-size: 14px; font-weight: 500; color: var(--fg-muted);">v3.8</span>
             </h1>
             <p style="font-size: 14px; color: var(--fg-muted); margin: 0;">
                 Формирование списка продукции АБ ИнБев Эфес
             </p>
             <p style="font-size: 12px; color: var(--fg-placeholder); margin: 2px 0 0;">
-                Добавлены: Эль Капулько (блоки 1, 5, 8) и Велкопоповицкий Козел (блоки 4, 5, 6)
+                v3.8: порядок ст→ст/ж-б→ж-б; внутри ж-б: 0,45→0,5
             </p>
         </header>
 
@@ -499,15 +499,11 @@
                 </div>
                 <div class="logic-item">
                     <span>•</span>
-                    <span>Автообъединения (Блоки 6, 7, 8, 9, 10) работают как в оригинале.</span>
+                    <span>Автообъединения (Блоки 6, 7, 8, 9, 10).</span>
                 </div>
                 <div class="logic-item">
                     <span>•</span>
-                    <span><span class="highlight">Эль Капулько</span> — в блоках 1 (ст), 5 (ж-б) и 8 (объединение).</span>
-                </div>
-                <div class="logic-item">
-                    <span>•</span>
-                    <span><span class="highlight">Велкопоповицкий Козел</span> — в блоках 4 (ст), 5 (ж-б) и 6 (объединение).</span>
+                    <span><span class="highlight">Амстердам</span> и <span class="highlight">Дактейл</span> — в блоках 4 (ст), 5 (ж-б) и 6 (объединение).</span>
                 </div>
                 <div class="logic-item" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-default); font-size: 10px; color: var(--fg-placeholder);">
                     <span>📌</span>
@@ -521,14 +517,18 @@
 
     <script>
         // ========================================================================
-        // ВЕРСИЯ: v3.5 — Добавлен Велкопоповицкий Козел в блоки 4, 5 и 6
+        // ВЕРСИЯ: v3.8 — порядок ст→ст/ж-б→ж-б; внутри ж-б: 0,45→0,5
         // МЕТАДАННЫЕ:
-        //   - Автор: AI Assistant v2.0
-        //   - Дата изменения: 2026-07-12
+        //   - Автор: Super Z (z.ai)
+        //   - Дата изменения: 2026-08-05
+        //   - Сессия: cc2c23ce-5f87-466d-9cf5-7c587ea28a65
         //   - Референс: https://chat.deepseek.com/share/y5s0m44ad6denfpg60
-        //   - Изменения: 
-        //     * Эль Капулько в блоках 1, 5, 8
-        //     * Велкопоповицкий Козел в блоках 4, 5, 6 (по логике Шпатена)
+        // ========================================================================
+        // ИСТОРИЯ ВЕРСИЙ:
+        //   v3.6 — Амстердам, Дактейл в блоках 4, 5, 6
+        //   v3.7 — +Перл Ривер ж-б 0,5; исправлен баг с комментарием в checkAutoMerges;
+        //          если Перл Ривер выбран — у предшествующих ж-б товаров убирается «ж-б»
+        //   v3.8 — порядок групп: ст→ст/ж-б→ж-б; внутри ж-б: 0,45→0,5
         // ========================================================================
 
         // === Configuration ===
@@ -560,7 +560,9 @@
                     { id: 'franz_4', name: 'Францисканер' },
                     { id: 'efes_4', name: 'Эфес' },
                     { id: 'red_finch_4', name: 'Ред Финч' },
-                    { id: 'kozel_4', name: 'Велкопоповицкий Козел' }
+                    { id: 'kozel_4', name: 'Велкопоповицкий Козел' },
+                    { id: 'amsterdam_4', name: 'Амстердам' },
+                    { id: 'dacktail_4', name: 'Дактейл' }
                 ]
             },
             {
@@ -578,7 +580,10 @@
                     { id: 'essa_5', name: 'Эсса' },
                     { id: 'red_finch_5', name: 'Ред Финч' },
                     { id: 'el_capulco_5', name: 'Эль Капулько' },
-                    { id: 'kozel_5', name: 'Велкопоповицкий Козел' }
+                    { id: 'kozel_5', name: 'Велкопоповицкий Козел' },
+                    { id: 'amsterdam_5', name: 'Амстердам' },
+                    { id: 'dacktail_5', name: 'Дактейл' },
+                    { id: 'perl_river', name: 'Перл Ривер' }
                 ]
             },
             {
@@ -588,7 +593,9 @@
                     { id: 'franz_6', name: 'Францисканер' },
                     { id: 'efes_6', name: 'Эфес' },
                     { id: 'red_finch_6', name: 'Ред Финч' },
-                    { id: 'kozel_6', name: 'Велкопоповицкий Козел' }
+                    { id: 'kozel_6', name: 'Велкопоповицкий Козел' },
+                    { id: 'amsterdam_6', name: 'Амстердам' },
+                    { id: 'dacktail_6', name: 'Дактейл' }
                 ]
             },
             {
@@ -663,7 +670,10 @@
             'БагБир': ['пэт'],
             'Хмель&Солод': ['пэт'],
             'Ловенбрау': ['пэт'],
-            'Велкопоповицкий Козел': ['ст', 'ж-б']
+            'Перл Ривер': ['ж-б'],
+            'Велкопоповицкий Козел': ['ст', 'ж-б'],
+            'Амстердам': ['ст', 'ж-б'],
+            'Дактейл': ['ст', 'ж-б']
         };
 
         // === Маппинг параметра на прямой ID в blocksConfig ===
@@ -689,7 +699,10 @@
             'БагБир': { 'пэт': 'bagbeer' },
             'Хмель&Солод': { 'пэт': 'hmel_sklad' },
             'Ловенбрау': { 'пэт': 'lowenbrau' },
-            'Велкопоповицкий Козел': { 'ст': 'kozel_4', 'ж-б': 'kozel_5' }
+            'Перл Ривер': { 'ж-б': 'perl_river' },
+            'Велкопоповицкий Козел': { 'ст': 'kozel_4', 'ж-б': 'kozel_5' },
+            'Амстердам': { 'ст': 'amsterdam_4', 'ж-б': 'amsterdam_5' },
+            'Дактейл': { 'ст': 'dacktail_4', 'ж-б': 'dacktail_5' }
         };
 
         function getDirectId(name, param) {
@@ -754,9 +767,18 @@
             if (name === 'БагБир') return param === 'пэт' && selectedItems.has('bagbeer');
             if (name === 'Хмель&Солод') return param === 'пэт' && selectedItems.has('hmel_sklad');
             if (name === 'Ловенбрау') return param === 'пэт' && selectedItems.has('lowenbrau');
+            if (name === 'Перл Ривер') return param === 'ж-б' && selectedItems.has('perl_river');
             if (name === 'Велкопоповицкий Козел') {
                 if (param === 'ст') return selectedItems.has('kozel_4') || selectedItems.has('kozel_6');
                 if (param === 'ж-б') return selectedItems.has('kozel_5') || selectedItems.has('kozel_6');
+            }
+            if (name === 'Амстердам') {
+                if (param === 'ст') return selectedItems.has('amsterdam_4') || selectedItems.has('amsterdam_6');
+                if (param === 'ж-б') return selectedItems.has('amsterdam_5') || selectedItems.has('amsterdam_6');
+            }
+            if (name === 'Дактейл') {
+                if (param === 'ст') return selectedItems.has('dacktail_4') || selectedItems.has('dacktail_6');
+                if (param === 'ж-б') return selectedItems.has('dacktail_5') || selectedItems.has('dacktail_6');
             }
             return false;
         }
@@ -803,6 +825,20 @@
                 }
                 if (param === 'ж-б' && !selectedItems.has('kozel_5') && !selectedItems.has('kozel_6')) {
                     selectedItems.add('kozel_5');
+                }
+            } else if (name === 'Амстердам') {
+                if (param === 'ст' && !selectedItems.has('amsterdam_4') && !selectedItems.has('amsterdam_6')) {
+                    selectedItems.add('amsterdam_4');
+                }
+                if (param === 'ж-б' && !selectedItems.has('amsterdam_5') && !selectedItems.has('amsterdam_6')) {
+                    selectedItems.add('amsterdam_5');
+                }
+            } else if (name === 'Дактейл') {
+                if (param === 'ст' && !selectedItems.has('dacktail_4') && !selectedItems.has('dacktail_6')) {
+                    selectedItems.add('dacktail_4');
+                }
+                if (param === 'ж-б' && !selectedItems.has('dacktail_5') && !selectedItems.has('dacktail_6')) {
+                    selectedItems.add('dacktail_5');
                 }
             } else if (name === 'Старый Мельник') {
                 if (param === 'ст') {
@@ -899,6 +935,54 @@
                         unblockItems('kozel_5');
                     } else {
                         selectedItems.add('kozel_5');
+                    }
+                }
+            } else if (name === 'Амстердам') {
+                if (param === 'ст') {
+                    if (selectedItems.has('amsterdam_6')) {
+                        selectedItems.delete('amsterdam_6');
+                        unblockItems('amsterdam_6');
+                        selectedItems.add('amsterdam_5');
+                    } else if (selectedItems.has('amsterdam_4')) {
+                        selectedItems.delete('amsterdam_4');
+                        unblockItems('amsterdam_4');
+                    } else {
+                        selectedItems.add('amsterdam_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('amsterdam_6')) {
+                        selectedItems.delete('amsterdam_6');
+                        unblockItems('amsterdam_6');
+                        selectedItems.add('amsterdam_4');
+                    } else if (selectedItems.has('amsterdam_5')) {
+                        selectedItems.delete('amsterdam_5');
+                        unblockItems('amsterdam_5');
+                    } else {
+                        selectedItems.add('amsterdam_5');
+                    }
+                }
+            } else if (name === 'Дактейл') {
+                if (param === 'ст') {
+                    if (selectedItems.has('dacktail_6')) {
+                        selectedItems.delete('dacktail_6');
+                        unblockItems('dacktail_6');
+                        selectedItems.add('dacktail_5');
+                    } else if (selectedItems.has('dacktail_4')) {
+                        selectedItems.delete('dacktail_4');
+                        unblockItems('dacktail_4');
+                    } else {
+                        selectedItems.add('dacktail_4');
+                    }
+                } else if (param === 'ж-б') {
+                    if (selectedItems.has('dacktail_6')) {
+                        selectedItems.delete('dacktail_6');
+                        unblockItems('dacktail_6');
+                        selectedItems.add('dacktail_4');
+                    } else if (selectedItems.has('dacktail_5')) {
+                        selectedItems.delete('dacktail_5');
+                        unblockItems('dacktail_5');
+                    } else {
+                        selectedItems.add('dacktail_5');
                     }
                 }
             } else if (name === 'Старый Мельник') {
@@ -1203,6 +1287,14 @@
                 ['kozel_4', 'kozel_5', 'kozel_6'].forEach(id => {
                     if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
                 });
+            } else if (name === 'Амстердам') {
+                ['amsterdam_4', 'amsterdam_5', 'amsterdam_6'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
+            } else if (name === 'Дактейл') {
+                ['dacktail_4', 'dacktail_5', 'dacktail_6'].forEach(id => {
+                    if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
+                });
             } else if (name === 'Старый Мельник') {
                 ['stary_mel_4', 'stary_mel_5', 'stary_mel_6', 'stary_mel_9', 'stary_mel_10'].forEach(id => {
                     if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
@@ -1255,7 +1347,8 @@
                     'Голд Майн Бир': ['gold_mine'],
                     'БагБир': ['bagbeer'],
                     'Хмель&Солод': ['hmel_sklad'],
-                    'Ловенбрау': ['lowenbrau']
+                    'Ловенбрау': ['lowenbrau'],
+                    'Перл Ривер': ['perl_river']
                 };
                 (simpleMap[name] || []).forEach(id => {
                     if (selectedItems.has(id)) { selectedItems.delete(id); unblockItems(id); }
@@ -1358,7 +1451,7 @@
                 blockConflictingItems('el_capulco_e', 8);
             }
 
-            // 3. Велкопоповицкий Козел (как Шпатен)
+            // 3. Велкопоповицкий Козел
             if (selectedItems.has('kozel_4') && selectedItems.has('kozel_5')) {
                 selectedItems.delete('kozel_4');
                 selectedItems.delete('kozel_5');
@@ -1368,7 +1461,27 @@
                 blockItems(['kozel_4', 'kozel_5'], 'kozel_6');
             }
 
-            // 4. Stella/Hoegaarden/Bud
+            // 4. Амстердам
+            if (selectedItems.has('amsterdam_4') && selectedItems.has('amsterdam_5')) {
+                selectedItems.delete('amsterdam_4');
+                selectedItems.delete('amsterdam_5');
+                selectedItems.add('amsterdam_6');
+                blockConflictingItems('amsterdam_6', 6);
+            } else if (selectedItems.has('amsterdam_6')) {
+                blockItems(['amsterdam_4', 'amsterdam_5'], 'amsterdam_6');
+            }
+
+            // 5. Дактейл
+            if (selectedItems.has('dacktail_4') && selectedItems.has('dacktail_5')) {
+                selectedItems.delete('dacktail_4');
+                selectedItems.delete('dacktail_5');
+                selectedItems.add('dacktail_6');
+                blockConflictingItems('dacktail_6', 6);
+            } else if (selectedItems.has('dacktail_6')) {
+                blockItems(['dacktail_4', 'dacktail_5'], 'dacktail_6');
+            }
+
+            // 6. Stella/Hoegaarden/Bud
             const groupSHB = [
                 { id3: 'stella_3', id5: 'stella_5', id7: 'stella_7' },
                 { id3: 'hoegaarden_3', id5: 'hoegaarden_5', id7: 'hoegaarden_7' },
@@ -1384,7 +1497,7 @@
                 }
             });
 
-            // 5. Spaten/Franz/Efes/Red Finch
+            // 7. Spaten/Franz/Efes/Red Finch
             const groupSFE = [
                 { id4: 'spaten_4', id5: 'spaten_5', id6: 'spaten_6' },
                 { id4: 'franz_4', id5: 'franz_5', id6: 'franz_6' },
@@ -1404,7 +1517,7 @@
                 }
             });
 
-            // 6. Stary Melnik Complex Logic
+            // 8. Stary Melnik Complex Logic
             const SM = {
                 b4: 'stary_mel_4', b5: 'stary_mel_5', b6: 'stary_mel_6',
                 b10: 'stary_mel_9', b11: 'stary_mel_10'
@@ -1436,7 +1549,7 @@
                  if (blockedBy[SM.b11] === SM.b6) delete blockedBy[SM.b11];
             }
 
-            // 7. Bely Medved
+            // 9. Bely Medved
             if (selectedItems.has('bely_medved_5') && selectedItems.has('bely_medved_11')) {
                 selectedItems.delete('bely_medved_5');
                 selectedItems.delete('bely_medved_11');
@@ -1520,7 +1633,7 @@
             });
 
             // === 2. Blocks 4, 5, 6 ===
-            const group456Ids = [4, 5, 6];
+            const group456Ids = [4, 6, 5];
             let lastActiveBlock456 = null;
 
             group456Ids.forEach(bid => {
@@ -1532,7 +1645,9 @@
                 const block = blocksConfig.find(b => b.id === bid);
                 if (!hasItems(block)) return;
 
-                const names = getSelNames(block);
+                const names = bid === 5
+                    ? block.items.filter(i => selectedItems.has(i.id) && i.id !== 'perl_river').map(i => i.name).join('/')
+                    : getSelNames(block);
                 let suffix = block.suffix; 
 
                 const isLast456 = (block === lastActiveBlock456);
@@ -1543,14 +1658,27 @@
                     if (isLast14) s4 += "ст";
                     if (isLast456) s4 += (s4 ? " " : "") + "0,45";
                     suffix = s4;
+                } else if (bid === 5) {
+                    if (!isLast456) {
+                        suffix = suffix.replace(' 0,45', '').replace('0,45', '').trim();
+                    }
+                    // Если выбран Перл Ривер — убрать «ж-б» из суффикса остальных ж-б товаров
+                    if (selectedItems.has('perl_river')) {
+                        suffix = suffix.replace('ж-б ', '').trim();
+                    }
                 } else {
                     if (!isLast456) {
                         suffix = suffix.replace(' 0,45', '').replace('0,45', '').trim();
                     }
                 }
 
-                parts.push(`${names} ${suffix}`.trim());
+                if (names) parts.push(`${names} ${suffix}`.trim());
             });
+
+            // === 2.5. Перл Ривер (ж-б 0,5 — отдельный объём) ===
+            if (selectedItems.has('perl_river')) {
+                parts.push('Перл Ривер ж-б 0,5');
+            }
 
             // === 3. Blocks 7, 8, 9 ===
             [7, 8, 9].forEach(bid => {
