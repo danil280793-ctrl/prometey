@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Super Z (z.ai)">
+    <meta name="version" content="v4.4">
+    <meta name="last-modified" content="2026-08-09">
+    <title>Конструктор строки товаров — Балтика v4.4</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f8; color: #1a2332; min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start;
+        }
+        .container { max-width: 1300px; width: 100%; padding: 20px; padding-top: 0; }
+
+        /* ===== RESULT ===== */
+        .result-section {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(240,244,248,0.92); backdrop-filter: blur(12px);
+            padding: 16px 0 12px 0; margin-bottom: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .result-inner {
+            background: #fff; border-radius: 16px; padding: 16px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+        }
+        .result-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+        .result-label { font-size: 12px; color: #6b7a93; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+        .result-actions { display: flex; align-items: center; gap: 10px; }
+        .selected-count { font-size: 13px; color: #6b7a93; font-weight: 500; }
+        .clear-btn, .copy-btn {
+            background: #f0f4f8; border: 1px solid #dce3ed; color: #4a5a78;
+            padding: 4px 14px; border-radius: 20px; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
+        }
+        .clear-btn:hover, .copy-btn:hover { border-color: #4a7db5; background: #e8edf5; color: #1a3a5a; }
+        .copy-btn.copied { border-color: #2d8f5c; background: #e6f5ed; color: #1a6a3a; }
+        .result-text { font-size: 18px; font-weight: 600; color: #1a2332; word-break: break-word; line-height: 1.4; min-height: 30px; padding: 4px 0; }
+        .result-text .empty { color: #9aabbf; font-weight: 400; font-size: 15px; }
+        .result-text .prefix { color: #6b7a93; font-weight: 400; }
+
+        /* ===== FILTERS ===== */
+        .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .filter-btn {
+            background: #fff; border: 1px solid #dce3ed; color: #4a5a78;
+            padding: 6px 18px; border-radius: 30px; font-size: 13px;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .filter-btn:hover { border-color: #b0c4d8; background: #f8fafc; }
+        .filter-btn.active { border-color: #4a7db5; background: #e8f0fe; color: #1a4a7a; }
+        .filter-count { font-size: 11px; color: #8a9bb0; margin-left: 4px; font-weight: 400; }
+
+        /* ===== CARDS ===== */
+        .blocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; padding-bottom: 30px; }
+        .block-card {
+            background: #fff; border: 1px solid #e8edf4; border-radius: 14px;
+            padding: 14px 16px 16px; transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .block-card:hover { border-color: #d0dce8; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .block-card.has-active { border-color: #4a7db5; background: #f8faff; box-shadow: 0 2px 12px rgba(74,125,181,0.08); }
+        .block-card.hidden { display: none; }
+        .block-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .block-title { font-size: 14px; font-weight: 600; color: #1a2332; flex: 1; }
+        .select-all-btn {
+            font-size: 11px; color: #4a7db5; background: none; border: none;
+            cursor: pointer; padding: 2px 8px; border-radius: 12px; transition: all 0.2s; font-weight: 500;
+        }
+        .select-all-btn:hover { background: #e8f0fe; }
+
+        /* ===== VARIANT ITEMS ===== */
+        .variants { display: flex; flex-wrap: wrap; gap: 6px; }
+        .variant-item {
+            display: flex; align-items: center; gap: 5px;
+            background: #f5f8fc; padding: 4px 10px 4px 6px;
+            border-radius: 20px; border: 1px solid #e8edf4;
+            transition: all 0.2s; cursor: pointer; font-size: 12px; color: #4a5a78;
+        }
+        .variant-item:hover { border-color: #c8d4e0; background: #f0f4fa; }
+        .variant-item.active { border-color: #4a7db5; background: #e8f0fe; color: #1a3a6a; }
+        .variant-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: #4a7db5; cursor: pointer; flex-shrink: 0; }
+        .variant-item .label { user-select: none; font-size: 12px; }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a2332; color: #f0f4f8; padding: 10px 24px;
+            border-radius: 12px; font-size: 14px; font-weight: 500;
+            opacity: 0; transition: all 0.3s ease; z-index: 200;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .blocks-grid { grid-template-columns: 1fr; }
+            .result-text { font-size: 15px; }
+            .block-card { padding: 12px; }
+            .filters { gap: 6px; }
+            .filter-btn { padding: 4px 14px; font-size: 12px; }
+            .result-inner { padding: 12px 16px; }
+            .result-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toast" id="toast"></div>
+
+        <div class="result-section">
+            <div class="result-inner">
+                <div class="result-header">
+                    <div class="result-label">v4.0 Итоговая строка — Балтика</div>
+                    <div class="result-actions">
+                        <span class="selected-count" id="selectedCount">Выбрано: 0</span>
+                        <button class="copy-btn" id="copyBtn">📋 Копировать</button>
+                        <button class="clear-btn" id="clearBtn">✕ Очистить</button>
+                    </div>
+                </div>
+                <div class="result-text" id="resultText">
+                    <span class="empty">Выберите хотя бы один товар</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters" id="filters">
+            <button class="filter-btn active" data-filter="all">Все <span class="filter-count" id="countAll">0</span></button>
+            <button class="filter-btn" data-filter="ст">ст <span class="filter-count" id="countст">0</span></button>
+            <button class="filter-btn" data-filter="ж-б">ж-б <span class="filter-count" id="countжб">0</span></button>
+            <button class="filter-btn" data-filter="пэт">пэт <span class="filter-count" id="countпэт">0</span></button>
+        </div>
+
+        <div class="blocks-grid" id="blocksGrid"></div>
+
+        <div class="signature" style="text-align:center;padding:16px;color:#9aa8b8;font-size:12px;letter-spacing:0.5px;">
+            Crafted by <strong style="color:#6b7a93;">Super Z</strong> &middot; <a href="https://z.ai" target="_blank" style="color:#4a90d9;text-decoration:none;">z.ai</a> &middot; v4.4
+        </div>
+    </div>
+
+    <script>
+        // ========================================================================
+        // ДАННЫЕ (ассортимент из v1.6.3)
+        // ========================================================================
+        const products = [
+            // === СТЕКЛО (ст) ===
+            { name: "Tony's Garret Hard", variants: ['ст 0,4'] },
+            { name: 'Балтика №1', variants: ['ст 0,33'] },
+            { name: 'Кулер', variants: ['ст 0,47'] },
+            { name: 'Жигулевское', variants: ['ст 0,5', 'пэт 1,5'] },
+
+            // === ЖЕСТЬ-БАНКА (ж-б) ===
+            { name: 'Балтика №0', variants: ['ж-б 0,45'] },
+            { name: 'Балтика №3', variants: ['ж-б 0,45'] },
+            { name: 'Балтика №7', variants: ['ж-б 0,45'] },
+            { name: 'Балтика №6', variants: ['ж-б 0,45'] },
+            { name: 'Крон', variants: ['ж-б 0,45'] },
+            { name: 'Жатецкий Гусь', variants: ['ж-б 0,45'] },
+            { name: 'Greenbeat', variants: ['ж-б 0,45', 'пэт 1,5'] },
+            { name: 'Гостовское', variants: ['ж-б 0,43'] },
+            { name: 'Биг Урбан Бир', variants: ['ж-б 0,43', 'пэт 1,1'] },
+
+            // === ПЭТ (всегда в конце) ===
+            { name: "Нап-к Flash Up", variants: ['пэт 0,47'] },
+        ];
+
+        // ========================================================================
+        // СОСТОЯНИЕ
+        // ========================================================================
+        const state = {};
+        products.forEach((product, index) => {
+            state[index] = new Set();
+        });
+        let currentFilter = 'all';
+
+        // ========================================================================
+        // ТОСТ
+        // ========================================================================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // ========================================================================
+        // РЕНДЕР
+        // ========================================================================
+        function renderProducts() {
+            const grid = document.getElementById('blocksGrid');
+            grid.innerHTML = '';
+
+            products.forEach((product, index) => {
+                const card = document.createElement('div');
+                card.className = 'block-card';
+                card.dataset.index = index;
+
+                const header = document.createElement('div');
+                header.className = 'block-header';
+
+                const title = document.createElement('span');
+                title.className = 'block-title';
+                title.textContent = product.name;
+                header.appendChild(title);
+
+                if (product.variants.length >= 2) {
+                    const selectAllBtn = document.createElement('button');
+                    selectAllBtn.className = 'select-all-btn';
+                    selectAllBtn.textContent = '☑ Все';
+                    selectAllBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const checkboxes = card.querySelectorAll('.variant-item input[type="checkbox"]');
+                        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                        checkboxes.forEach(cb => cb.checked = !allChecked);
+                        checkboxes.forEach(cb => cb.dispatchEvent(new Event('change')));
+                    });
+                    header.appendChild(selectAllBtn);
+                }
+
+                card.appendChild(header);
+
+                const variantsContainer = document.createElement('div');
+                variantsContainer.className = 'variants';
+
+                product.variants.forEach(variant => {
+                    const item = document.createElement('div');
+                    item.className = 'variant-item';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `p${index}_${variant.replace(/\s/g, '_')}`;
+                    checkbox.dataset.variant = variant;
+
+                    checkbox.addEventListener('change', () => {
+                        updateState(index);
+                        updateResult();
+                        updateCardStyles();
+                        updateCounts();
+                        applyFilter();
+                    });
+
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = variant;
+
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    variantsContainer.appendChild(item);
+                });
+
+                card.appendChild(variantsContainer);
+                grid.appendChild(card);
+            });
+
+            updateResult();
+            updateCardStyles();
+            updateCounts();
+            applyFilter();
+        }
+
+        // ========================================================================
+        // ОЧИСТКА
+        // ========================================================================
+        function clearAll() {
+            products.forEach((_, index) => { state[index] = new Set(); });
+            document.querySelectorAll('.variant-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+            updateCardStyles();
+            updateCounts();
+            updateResult();
+            applyFilter();
+            showToast('✅ Всё очищено');
+        }
+
+        // ========================================================================
+        // КОПИРОВАНИЕ
+        // ========================================================================
+        function copyResult() {
+            const resultEl = document.getElementById('resultText');
+            const text = resultEl.textContent;
+            if (!text || text.includes('Выберите хотя бы один товар')) {
+                showToast('❌ Нет данных для копирования');
+                return;
+            }
+            const btn = document.getElementById('copyBtn');
+            navigator.clipboard.writeText(text).then(() => {
+                btn.classList.add('copied');
+                btn.textContent = '✅ Скопировано';
+                showToast('📋 Скопировано!');
+                setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 Копировать'; }, 2000);
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text; document.body.appendChild(textarea);
+                textarea.select(); document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('📋 Скопировано!');
+            });
+        }
+
+        // ========================================================================
+        // УТИЛИТЫ
+        // ========================================================================
+        function getProductMaterials(index) {
+            const materials = new Set();
+            products[index].variants.forEach(v => materials.add(v.split(' ')[0]));
+            return Array.from(materials);
+        }
+
+        function updateState(index) {
+            const card = document.querySelector(`.block-card[data-index="${index}"]`);
+            if (!card) return;
+            const checked = card.querySelectorAll('.variant-item input[type="checkbox"]:checked');
+            state[index] = new Set();
+            checked.forEach(cb => state[index].add(cb.dataset.variant));
+        }
+
+        function updateCardStyles() {
+            document.querySelectorAll('.block-card').forEach(card => {
+                const hasActive = card.querySelector('.variant-item input[type="checkbox"]:checked');
+                card.classList.toggle('has-active', !!hasActive);
+                card.querySelectorAll('.variant-item').forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    item.classList.toggle('active', cb.checked);
+                });
+            });
+        }
+
+        // ========================================================================
+        // ПОДСЧЁТ ВЫБРАННЫХ (для фильтров)
+        // ========================================================================
+        function updateCounts() {
+            const totalSelected = Object.values(state).reduce((sum, set) => sum + set.size, 0);
+            document.getElementById('selectedCount').textContent = `Выбрано: ${totalSelected}`;
+
+            const counts = { all: 0, 'ст': 0, 'ж-б': 0, 'пэт': 0 };
+            products.forEach((product, index) => {
+                const selected = state[index] || new Set();
+                if (selected.size === 0) return;
+                const materials = getProductMaterials(index);
+                counts.all++;
+                materials.forEach(m => { if (counts[m] !== undefined) counts[m]++; });
+            });
+            document.getElementById('countAll').textContent = counts.all;
+            document.getElementById('countст').textContent = counts['ст'];
+            document.getElementById('countжб').textContent = counts['ж-б'];
+            document.getElementById('countпэт').textContent = counts['пэт'];
+        }
+
+        // ========================================================================
+        // ФИЛЬТРАЦИЯ
+        // ========================================================================
+        function applyFilter() {
+            document.querySelectorAll('.block-card').forEach(card => {
+                const index = parseInt(card.dataset.index);
+                const materials = getProductMaterials(index);
+                if (currentFilter === 'all') { card.classList.remove('hidden'); return; }
+                card.classList.toggle('hidden', !materials.includes(currentFilter));
+            });
+        }
+
+        function initFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    applyFilter();
+                });
+            });
+        }
+
+        // ========================================================================
+        // ФОРМИРОВАНИЕ СТРОКИ (v4.3 — сегменты с volume linking + material dedup)
+        // Порядок групп: ст → ж-б → ст/ж-б → ст/пэт → ж-б/пэт → ст/ж-б/пэт → пэт
+        // Flash Up — исключение: всегда первый
+        // Материал пишется только на ПОСЛЕДНЕМ сегменте каждого материала
+        // Volume linking: одинаковый объём → пишется один раз
+        // ========================================================================
+        function getGroupKey(materials) {
+            const g = materials.has('ст'), c = materials.has('ж-б'), p = materials.has('пэт');
+            if (g && c && p) return 'ст/ж-б/пэт';
+            if (g && c)     return 'ст/ж-б';
+            if (g && p)     return 'ст/пэт';
+            if (c && p)     return 'ж-б/пэт';
+            if (g)          return 'ст';
+            if (c)          return 'ж-б';
+            if (p)          return 'пэт';
+            return 'other';
+        }
+
+        const GROUP_ORDER = ['ст', 'ж-б', 'ст/ж-б', 'ст/пэт', 'ж-б/пэт', 'ст/ж-б/пэт', 'пэт'];
+        const VOL_ORDER = ['0,33', '0,4', '0,44', '0,45', '0,43', '0,47', '0,48', '0,5', '1,0', '1,1', '1,2', '1,25', '1,3', '1,35', '1,5'];
+        const INTERNAL_MAT_ORDER = ['ст', 'ж-б', 'пэт']; // для объединённой Балтики и multi-material
+
+        // --- Одноматериальная группа → массив сегментов ---
+        // preferredFirstVolume: объём из предыдущей группы (для volume linking reorder)
+        // combinedState: { baltikaNameUsed } — трекер для объединённой Балтики (имя 1 раз)
+        function formatSingleGroup(items, material, preferredFirstVolume, combinedState) {
+            const volMap = {};
+            items.forEach(item => {
+                item.variants.forEach(v => {
+                    if (!volMap[v.volume]) volMap[v.volume] = [];
+                    if (!volMap[v.volume].includes(item.name)) volMap[v.volume].push(item.name);
+                });
+            });
+
+            const sortedVols = Object.keys(volMap).sort((a, b) => VOL_ORDER.indexOf(a) - VOL_ORDER.indexOf(b));
+            if (sortedVols.length === 0) return [];
+
+            // Балтика — последней только в ст-группе (по объёму)
+            // В остальных группах — по VOL_ORDER (ж-б: 0,45 перед 0,43)
+            let orderedVols;
+            if (material === 'ст') {
+                const baltikaVols = sortedVols.filter(vol => volMap[vol].some(n => n.startsWith('Балтика ')));
+                const nonBaltikaVols = sortedVols.filter(vol => !baltikaVols.includes(vol));
+
+                let orderedNonBaltika = nonBaltikaVols;
+                if (preferredFirstVolume && nonBaltikaVols.includes(preferredFirstVolume)) {
+                    orderedNonBaltika = [preferredFirstVolume, ...nonBaltikaVols.filter(v => v !== preferredFirstVolume)];
+                }
+
+                orderedVols = [...orderedNonBaltika, ...baltikaVols];
+            } else {
+                if (preferredFirstVolume && sortedVols.includes(preferredFirstVolume)) {
+                    orderedVols = [preferredFirstVolume, ...sortedVols.filter(v => v !== preferredFirstVolume)];
+                } else {
+                    orderedVols = [...sortedVols];
+                }
+            }
+
+            const segments = [];
+            orderedVols.forEach((vol, idx) => {
+                const names = volMap[vol];
+                const baltika = names.filter(n => n.startsWith('Балтика ')).map(n => n.replace('Балтика ', ''))
+                    .sort((a, b) => parseInt(a.replace('№', '')) - parseInt(b.replace('№', '')));
+                const others = names.filter(n => !n.startsWith('Балтика ')).sort((a, b) => a.localeCompare(b, 'ru'));
+
+                let nameStr = '';
+                if (combinedState && baltika.length > 0) {
+                    // Combined mode: Балтика номера первыми, companions после
+                    const allNames = [...baltika, ...others];
+                    const prefix = combinedState.baltikaNameUsed ? '' : 'Балтика ';
+                    nameStr = allNames.join('/');
+                    if (baltika.length > 0 && !combinedState.baltikaNameUsed) {
+                        nameStr = 'Балтика ' + nameStr;
+                        combinedState.baltikaNameUsed = true;
+                    }
+                } else {
+                    // Normal mode: others first, Baltika last
+                    if (others.length > 0) nameStr = others.join('/');
+                    if (baltika.length > 0) nameStr += (nameStr ? '/' : '') + 'Балтика ' + baltika.join('/');
+                }
+
+                const isLast = (idx === orderedVols.length - 1);
+                segments.push({
+                    text: nameStr + ' ' + (isLast ? material + ' ' + vol : vol),
+                    volume: vol,
+                    linkableEnd: true,
+                    material: isLast ? material : null
+                });
+            });
+
+            return segments;
+        }
+
+        // --- Многоматериальная группа → compound сегмент ---
+        function formatProductEntry(item) {
+            const sorted = [...item.variants].sort((a, b) => {
+                const mi = INTERNAL_MAT_ORDER.indexOf(a.material) - INTERNAL_MAT_ORDER.indexOf(b.material);
+                if (mi !== 0) return mi;
+                return VOL_ORDER.indexOf(a.volume) - VOL_ORDER.indexOf(b.volume);
+            });
+
+            const volGroups = {};
+            sorted.forEach(v => {
+                if (!volGroups[v.volume]) volGroups[v.volume] = [];
+                if (!volGroups[v.volume].includes(v.material)) volGroups[v.volume].push(v.material);
+            });
+
+            const orderedVols = [];
+            const seen = new Set();
+            sorted.forEach(v => { if (!seen.has(v.volume)) { seen.add(v.volume); orderedVols.push(v.volume); } });
+
+            const entryParts = [];
+            const introduced = new Set();
+            let first = true;
+
+            orderedVols.forEach(vol => {
+                const mats = volGroups[vol];
+                if (mats.length > 1) {
+                    entryParts.push(mats.join('/') + ' ' + vol);
+                    mats.forEach(m => introduced.add(m));
+                } else {
+                    const m = mats[0];
+                    if (first) entryParts.push(m + ' ' + vol);
+                    else if (introduced.has(m)) entryParts.push(vol);
+                    else entryParts.push(m + ' ' + vol);
+                    introduced.add(m);
+                }
+                first = false;
+            });
+
+            return {
+                text: item.name + ' ' + entryParts.join('/'),
+                volume: orderedVols[0],
+                linkableEnd: false // compound — не участвует в volume linking
+            };
+        }
+
+        // --- Объединённая Балтика → массив сегментов ---
+        function formatCombinedBaltika(baltikaItems, companions) {
+            const matVolMap = {};
+            baltikaItems.forEach(item => {
+                item.variants.forEach(v => {
+                    const key = v.material + '|' + v.volume;
+                    if (!matVolMap[key]) matVolMap[key] = { material: v.material, volume: v.volume, baltikaNums: [], companionNames: [] };
+                    const num = item.name.replace('Балтика ', '');
+                    if (!matVolMap[key].baltikaNums.includes(num)) matVolMap[key].baltikaNums.push(num);
+                });
+            });
+
+            if (companions && companions.length > 0) {
+                companions.forEach(item => {
+                    item.variants.forEach(v => {
+                        const key = v.material + '|' + v.volume;
+                        if (matVolMap[key]) {
+                            if (!matVolMap[key].companionNames.includes(item.name)) {
+                                matVolMap[key].companionNames.push(item.name);
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Внутри объединённой Балтики: ст → ж-б → пэт
+            const sortedGroups = Object.values(matVolMap).sort((a, b) => {
+                const mi = INTERNAL_MAT_ORDER.indexOf(a.material) - INTERNAL_MAT_ORDER.indexOf(b.material);
+                if (mi !== 0) return mi;
+                return VOL_ORDER.indexOf(a.volume) - VOL_ORDER.indexOf(b.volume);
+            });
+
+            const segments = [];
+            sortedGroups.forEach((group, idx) => {
+                const nums = group.baltikaNums
+                    .sort((a, b) => parseInt(a.replace('№', '')) - parseInt(b.replace('№', '')));
+                const compNames = (group.companionNames || []).sort((a, b) => a.localeCompare(b, 'ru'));
+                const allNames = [...nums, ...compNames];
+                const suffix = group.material + ' ' + group.volume;
+                if (idx === 0) {
+                    segments.push({
+                        text: 'Балтика ' + allNames.join('/') + ' ' + suffix,
+                        volume: group.volume,
+                        linkableEnd: true,
+                        isBaltika: true,
+                        material: group.material
+                    });
+                } else {
+                    segments.push({
+                        text: allNames.join('/') + ' ' + suffix,
+                        volume: group.volume,
+                        linkableEnd: true,
+                        isBaltika: true,
+                        material: group.material
+                    });
+                }
+            });
+
+            return segments;
+        }
+
+        // --- Главная функция ---
+        function updateResult() {
+            const selectedItems = [];
+            products.forEach((product, index) => {
+                const selected = state[index] || new Set();
+                if (selected.size === 0) return;
+                const materials = new Set();
+                const parsed = Array.from(selected).map(v => {
+                    const p = v.split(' ');
+                    materials.add(p[0]);
+                    return { material: p[0], volume: p[1] };
+                });
+                selectedItems.push({ name: product.name, variants: parsed, materials });
+            });
+
+            if (selectedItems.length === 0) {
+                document.getElementById('resultText').innerHTML = '<span class="empty">Выберите хотя бы один товар</span>';
+                return;
+            }
+
+            // --- Flash Up + Кулер: неразрывная связка (исключение) ---
+            const flashUpItem = selectedItems.find(i => i.name === 'Нап-к Flash Up');
+            const coolerItem = selectedItems.find(i => i.name === 'Кулер');
+            let coolerExceptionVol = null;
+            if (flashUpItem && coolerItem) {
+                const fuVols = new Set(flashUpItem.variants.map(v => v.volume));
+                const clVols = new Set(coolerItem.variants.map(v => v.volume));
+                const commonVol = [...fuVols].find(v => clVols.has(v));
+                if (commonVol) coolerExceptionVol = commonVol;
+            }
+            const flashUpExtracted = !!coolerExceptionVol; // Flash Up извлекается только с Кулером
+
+            // Flash Up без Кулера — тоже извлекаем, но поставим в конец
+            const flashUpAlone = !coolerExceptionVol && !!flashUpItem;
+
+            // --- Baltika combined: в разных группах → имя "Балтика" пишется 1 раз ---
+            const baltikaItems = selectedItems.filter(i => i.name.startsWith('Балтика '));
+            const baltikaGroupKeys = new Set(baltikaItems.map(i => getGroupKey(i.materials)));
+            const baltikaIsCombined = baltikaGroupKeys.size > 1;
+            const combinedState = baltikaIsCombined ? { baltikaNameUsed: false } : null;
+
+            // --- Распределяем по группам (все, кроме Flash Up и Cooler-exception) ---
+            const groups = { 'ст': [], 'ж-б': [], 'ст/ж-б': [], 'ст/пэт': [], 'ж-б/пэт': [], 'ст/ж-б/пэт': [], 'пэт': [] };
+            selectedItems.forEach(item => {
+                if ((flashUpExtracted || flashUpAlone) && item.name === 'Нап-к Flash Up') return;
+                if (coolerExceptionVol && item.name === 'Кулер') return;
+                const key = getGroupKey(item.materials);
+                if (groups[key]) groups[key].push(item);
+            });
+
+            // === Собираем сегменты из групп ===
+            const allSegments = [];
+            let prevVolume = null;
+
+            GROUP_ORDER.forEach(gk => {
+                const items = groups[gk];
+                if (items && items.length > 0) {
+                    const isSingle = (gk === 'ст' || gk === 'ж-б' || gk === 'пэт');
+                    if (isSingle) {
+                        const segs = formatSingleGroup(items, gk, prevVolume, combinedState);
+                        allSegments.push(...segs);
+                        if (segs.length > 0) prevVolume = segs[segs.length - 1].volume;
+                    } else {
+                        items.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+                        items.forEach(item => {
+                            const seg = formatProductEntry(item);
+                            allSegments.push(seg);
+                            prevVolume = seg.volume;
+                        });
+                    }
+                }
+            });
+
+            // === Flash Up + Кулер — вставляем в начало (только как связку) ===
+            if (flashUpExtracted && flashUpItem) {
+                const fuVol = flashUpItem.variants[0].volume;
+                allSegments.unshift({
+                    text: 'Нап-к Flash Up пэт ' + fuVol,
+                    volume: fuVol,
+                    linkableEnd: true,
+                    material: 'пэт'
+                });
+            }
+
+            // === Flash Up без Кулера — всегда в конце ===
+            if (flashUpAlone && flashUpItem) {
+                const fuVol = flashUpItem.variants[0].volume;
+                allSegments.push({
+                    text: 'Нап-к Flash Up пэт ' + fuVol,
+                    volume: fuVol,
+                    linkableEnd: true,
+                    material: 'пэт'
+                });
+            }
+
+            // === Кулер exception: сразу после Flash Up ===
+            if (coolerExceptionVol) {
+                const fuIdx = allSegments.findIndex(s => s.text.startsWith('Нап-к Flash Up'));
+                if (fuIdx !== -1) {
+                    allSegments[fuIdx].text = allSegments[fuIdx].text.replace(/ \d+,\d+$/, '');
+                    if (!allSegments[fuIdx].text.endsWith(' пэт')) {
+                        allSegments[fuIdx].text += ' пэт';
+                    }
+                    allSegments[fuIdx].volume = null;
+                    allSegments.splice(fuIdx + 1, 0, {
+                        text: 'Кулер ' + coolerExceptionVol,
+                        volume: coolerExceptionVol,
+                        linkableEnd: false
+                    });
+                }
+            }
+
+            // === Material dedup: материал только на ПОСЛЕДНЕМ сегменте каждого типа ===
+            const lastMatIndex = {};
+            allSegments.forEach((seg, i) => {
+                if (seg.material && seg.linkableEnd !== false) {
+                    lastMatIndex[seg.material] = i;
+                }
+            });
+            allSegments.forEach((seg, i) => {
+                if (seg.material && seg.linkableEnd !== false && lastMatIndex[seg.material] !== i) {
+                    seg.text = seg.text.split(' ' + seg.material + ' ').join(' ');
+                }
+            });
+
+            // === Volume linking ===
+            for (let i = 0; i < allSegments.length - 1; i++) {
+                const curr = allSegments[i];
+                const next = allSegments[i + 1];
+                if (curr.linkableEnd && next.linkableEnd && curr.volume !== null && curr.volume === next.volume) {
+                    curr.text = curr.text.replace(/ \d+,\d+$/, '');
+                    curr.volume = null;
+                }
+            }
+
+            const resultString = allSegments.map(s => s.text).filter(t => t).join('/');
+            document.getElementById('resultText').innerHTML = '<span class="prefix">Балтика</span> (' + resultString + ')';
+        }
+
+        // ========================================================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ========================================================================
+        renderProducts();
+        initFilters();
+        document.getElementById('clearBtn').addEventListener('click', clearAll);
+        document.getElementById('copyBtn').addEventListener('click', copyResult);
+    </script>
+</body>
+</html>
