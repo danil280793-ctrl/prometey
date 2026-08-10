@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Super Z (z.ai)">
+    <meta name="version" content="v1.3">
+    <meta name="last-modified" content="2026-08-10">
+    <title>Конструктор строки товаров — МПК v1.3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f8; color: #1a2332; min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start;
+        }
+        .container { max-width: 1300px; width: 100%; padding: 20px; padding-top: 0; }
+
+        /* ===== RESULT ===== */
+        .result-section {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(240,244,248,0.92); backdrop-filter: blur(12px);
+            padding: 16px 0 12px 0; margin-bottom: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .result-inner {
+            background: #fff; border-radius: 16px; padding: 16px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+        }
+        .result-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+        .result-label { font-size: 12px; color: #6b7a93; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+        .result-actions { display: flex; align-items: center; gap: 10px; }
+        .selected-count { font-size: 13px; color: #6b7a93; font-weight: 500; }
+        .clear-btn, .copy-btn {
+            background: #f0f4f8; border: 1px solid #dce3ed; color: #4a5a78;
+            padding: 4px 14px; border-radius: 20px; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
+        }
+        .clear-btn:hover, .copy-btn:hover { border-color: #4a7db5; background: #e8edf5; color: #1a3a5a; }
+        .copy-btn.copied { border-color: #2d8f5c; background: #e6f5ed; color: #1a6a3a; }
+        .result-text { font-size: 18px; font-weight: 600; color: #1a2332; word-break: break-word; line-height: 1.4; min-height: 30px; padding: 4px 0; }
+        .result-text .empty { color: #9aabbf; font-weight: 400; font-size: 15px; }
+        .result-text .prefix { color: #6b7a93; font-weight: 400; }
+
+        /* ===== FILTERS ===== */
+        .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .filter-btn {
+            background: #fff; border: 1px solid #dce3ed; color: #4a5a78;
+            padding: 6px 18px; border-radius: 30px; font-size: 13px;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .filter-btn:hover { border-color: #b0c4d8; background: #f8fafc; }
+        .filter-btn.active { border-color: #4a7db5; background: #e8f0fe; color: #1a4a7a; }
+        .filter-count { font-size: 11px; color: #8a9bb0; margin-left: 4px; font-weight: 400; }
+
+        /* ===== CARDS ===== */
+        .blocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; padding-bottom: 30px; }
+        .block-card {
+            background: #fff; border: 1px solid #e8edf4; border-radius: 14px;
+            padding: 14px 16px 16px; transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .block-card:hover { border-color: #d0dce8; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .block-card.has-active { border-color: #4a7db5; background: #f8faff; box-shadow: 0 2px 12px rgba(74,125,181,0.08); }
+        .block-card.hidden { display: none; }
+        .block-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .block-title { font-size: 14px; font-weight: 600; color: #1a2332; flex: 1; }
+        .select-all-btn {
+            font-size: 11px; color: #4a7db5; background: none; border: none;
+            cursor: pointer; padding: 2px 8px; border-radius: 12px; transition: all 0.2s; font-weight: 500;
+        }
+        .select-all-btn:hover { background: #e8f0fe; }
+
+        /* ===== VARIANT ITEMS ===== */
+        .variants { display: flex; flex-wrap: wrap; gap: 6px; }
+        .variant-item {
+            display: flex; align-items: center; gap: 5px;
+            background: #f5f8fc; padding: 4px 10px 4px 6px;
+            border-radius: 20px; border: 1px solid #e8edf4;
+            transition: all 0.2s; cursor: pointer; font-size: 12px; color: #4a5a78;
+        }
+        .variant-item:hover { border-color: #c8d4e0; background: #f0f4fa; }
+        .variant-item.active { border-color: #4a7db5; background: #e8f0fe; color: #1a3a6a; }
+        .variant-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: #4a7db5; cursor: pointer; flex-shrink: 0; }
+        .variant-item .label { user-select: none; font-size: 12px; }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a2332; color: #f0f4f8; padding: 10px 24px;
+            border-radius: 12px; font-size: 14px; font-weight: 500;
+            opacity: 0; transition: all 0.3s ease; z-index: 200;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .blocks-grid { grid-template-columns: 1fr; }
+            .result-text { font-size: 15px; }
+            .block-card { padding: 12px; }
+            .filters { gap: 6px; }
+            .filter-btn { padding: 4px 14px; font-size: 12px; }
+            .result-inner { padding: 12px 16px; }
+            .result-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toast" id="toast"></div>
+
+        <div class="result-section">
+            <div class="result-inner">
+                <div class="result-header">
+                    <div class="result-label">v1.3 Итоговая строка — МПК</div>
+                    <div class="result-actions">
+                        <span class="selected-count" id="selectedCount">Выбрано: 0</span>
+                        <button class="copy-btn" id="copyBtn">📋 Копировать</button>
+                        <button class="clear-btn" id="clearBtn">✕ Очистить</button>
+                    </div>
+                </div>
+                <div class="result-text" id="resultText">
+                    <span class="empty">Выберите хотя бы один товар</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters" id="filters">
+            <button class="filter-btn active" data-filter="all">Все <span class="filter-count" id="countAll">0</span></button>
+            <button class="filter-btn" data-filter="ст">ст <span class="filter-count" id="countст">0</span></button>
+            <button class="filter-btn" data-filter="ж-б">ж-б <span class="filter-count" id="countжб">0</span></button>
+        </div>
+
+        <div class="blocks-grid" id="blocksGrid"></div>
+
+        <div class="signature" style="text-align:center;padding:16px;color:#9aa8b8;font-size:12px;letter-spacing:0.5px;">
+            Crafted by <strong style="color:#6b7a93;">Super Z</strong> &middot; <a href="https://z.ai" target="_blank" style="color:#4a90d9;text-decoration:none;">z.ai</a> &middot; v1.3
+        </div>
+    </div>
+
+    <script>
+        // ========================================================================
+        // ДАННЫЕ — МПК (Результат)
+        // ========================================================================
+        const products = [
+            // === ЖИГУЛИ (5 вариантов: ст × 3 + ж-б × 2) ===
+            { name: 'Жигули', variants: ['ст 0,31'] },
+            { name: 'Жигули', variants: ['ст 0,43'] },
+            { name: 'Жигули', variants: ['ст 0,45'] },
+            { name: 'Жигули', variants: ['ж-б 0,43'] },
+            { name: 'Жигули', variants: ['ж-б 0,45'] },
+
+            // === ИЧАНГ (2 варианта) ===
+            { name: 'Ичанг', variants: ['ст 0,62'] },
+            { name: 'Ичанг', variants: ['ж-б 0,43'] },
+
+            // === ВОЛКОВСКАЯ ПИВОВАРНЯ (2 варианта) ===
+            { name: 'Волковская Пивоварня', variants: ['ст 0,45'] },
+            { name: 'Волковская Пивоварня', variants: ['ж-б 0,43'] },
+
+            // === ПАБСТ БЛЮ РИББОН (1 вариант) ===
+            { name: 'Пабст Блю Риббон', variants: ['ж-б 0,43'] },
+
+            // === ХАМОВНИКИ (1 вариант) ===
+            { name: 'Хамовники', variants: ['ж-б 0,45'] },
+
+            // === КВАС ЯХОНТ (2 варианта — ВСЕГДА ПОСЛЕДНИЙ) ===
+            { name: 'Квас Яхонт', variants: ['ж-б 0,43'] },
+            { name: 'Квас Яхонт', variants: ['ж-б 0,45'] },
+        ];
+
+        // ========================================================================
+        // СОСТОЯНИЕ
+        // ========================================================================
+        const state = {};
+        products.forEach((product, index) => {
+            state[index] = new Set();
+        });
+        let currentFilter = 'all';
+
+        // ========================================================================
+        // ТОСТ
+        // ========================================================================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // ========================================================================
+        // РЕНДЕР
+        // ========================================================================
+        function renderProducts() {
+            const grid = document.getElementById('blocksGrid');
+            grid.innerHTML = '';
+
+            // Группируем продукты по имени для отображения в одной карточке
+            const grouped = {};
+            products.forEach((product, index) => {
+                if (!grouped[product.name]) grouped[product.name] = [];
+                grouped[product.name].push({ product, index });
+            });
+
+            Object.keys(grouped).forEach(name => {
+                const entries = grouped[name];
+                const card = document.createElement('div');
+                card.className = 'block-card';
+                // data-index: первый индекс в группе (для совместимости с filter)
+                card.dataset.index = entries[0].index;
+                card.dataset.name = name;
+
+                const header = document.createElement('div');
+                header.className = 'block-header';
+
+                const title = document.createElement('span');
+                title.className = 'block-title';
+                title.textContent = name;
+                header.appendChild(title);
+
+                // Кнопка "Все" только если больше 1 варианта
+                if (entries.length >= 2) {
+                    const selectAllBtn = document.createElement('button');
+                    selectAllBtn.className = 'select-all-btn';
+                    selectAllBtn.textContent = '☑ Все';
+                    selectAllBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const checkboxes = card.querySelectorAll('.variant-item input[type="checkbox"]');
+                        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                        checkboxes.forEach(cb => cb.checked = !allChecked);
+                        checkboxes.forEach(cb => cb.dispatchEvent(new Event('change')));
+                    });
+                    header.appendChild(selectAllBtn);
+                }
+
+                card.appendChild(header);
+
+                const variantsContainer = document.createElement('div');
+                variantsContainer.className = 'variants';
+
+                entries.forEach(({ product, index }) => {
+                    const item = document.createElement('div');
+                    item.className = 'variant-item';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `p${index}_${product.variants[0].replace(/\s/g, '_')}`;
+                    checkbox.dataset.variant = product.variants[0];
+                    checkbox.dataset.index = index;
+
+                    checkbox.addEventListener('change', () => {
+                        updateState(index);
+                        updateResult();
+                        updateCardStyles();
+                        updateCounts();
+                        applyFilter();
+                    });
+
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = product.variants[0];
+
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    variantsContainer.appendChild(item);
+                });
+
+                card.appendChild(variantsContainer);
+                grid.appendChild(card);
+            });
+
+            updateResult();
+            updateCardStyles();
+            updateCounts();
+            applyFilter();
+        }
+
+        // ========================================================================
+        // ОЧИСТКА
+        // ========================================================================
+        function clearAll() {
+            products.forEach((_, index) => { state[index] = new Set(); });
+            document.querySelectorAll('.variant-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+            updateCardStyles();
+            updateCounts();
+            updateResult();
+            applyFilter();
+            showToast('✅ Всё очищено');
+        }
+
+        // ========================================================================
+        // КОПИРОВАНИЕ
+        // ========================================================================
+        function copyResult() {
+            const resultEl = document.getElementById('resultText');
+            const text = resultEl.textContent;
+            if (!text || text.includes('Выберите хотя бы один товар')) {
+                showToast('❌ Нет данных для копирования');
+                return;
+            }
+            const btn = document.getElementById('copyBtn');
+            navigator.clipboard.writeText(text).then(() => {
+                btn.classList.add('copied');
+                btn.textContent = '✅ Скопировано';
+                showToast('📋 Скопировано!');
+                setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 Копировать'; }, 2000);
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text; document.body.appendChild(textarea);
+                textarea.select(); document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('📋 Скопировано!');
+            });
+        }
+
+        // ========================================================================
+        // УТИЛИТЫ
+        // ========================================================================
+        function getProductMaterials(index) {
+            const materials = new Set();
+            products[index].variants.forEach(v => materials.add(v.split(' ')[0]));
+            return Array.from(materials);
+        }
+
+        function updateState(index) {
+            const cb = document.querySelector(`.variant-item input[data-index="${index}"]`);
+            if (!cb) return;
+            if (cb.checked) {
+                state[index] = new Set([cb.dataset.variant]);
+            } else {
+                state[index] = new Set();
+            }
+        }
+
+        function updateCardStyles() {
+            document.querySelectorAll('.block-card').forEach(card => {
+                const hasActive = card.querySelector('.variant-item input[type="checkbox"]:checked');
+                card.classList.toggle('has-active', !!hasActive);
+                card.querySelectorAll('.variant-item').forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    item.classList.toggle('active', cb.checked);
+                });
+            });
+        }
+
+        // ========================================================================
+        // ПОДСЧЁТ ВЫБРАННЫХ (для фильтров)
+        // ========================================================================
+        function updateCounts() {
+            const totalSelected = Object.values(state).reduce((sum, set) => sum + set.size, 0);
+            document.getElementById('selectedCount').textContent = `Выбрано: ${totalSelected}`;
+
+            const counts = { all: 0, 'ст': 0, 'ж-б': 0 };
+
+            // Группируем по имени продукта для подсчёта
+            const productNames = new Set(products.map(p => p.name));
+            productNames.forEach(name => {
+                const indices = products.map((p, i) => p.name === name ? i : -1).filter(i => i >= 0);
+                const hasAny = indices.some(i => state[i] && state[i].size > 0);
+                if (!hasAny) return;
+                counts.all++;
+                indices.forEach(i => {
+                    if (state[i] && state[i].size > 0) {
+                        const mat = products[i].variants[0].split(' ')[0];
+                        if (counts[mat] !== undefined) counts[mat]++;
+                    }
+                });
+            });
+
+            document.getElementById('countAll').textContent = counts.all;
+            document.getElementById('countст').textContent = counts['ст'];
+            document.getElementById('countжб').textContent = counts['ж-б'];
+        }
+
+        // ========================================================================
+        // ФИЛЬТРАЦИЯ
+        // ========================================================================
+        function applyFilter() {
+            document.querySelectorAll('.block-card').forEach(card => {
+                if (currentFilter === 'all') { card.classList.remove('hidden'); return; }
+                const name = card.dataset.name;
+                const indices = products.map((p, i) => p.name === name ? i : -1).filter(i => i >= 0);
+                const hasMaterial = indices.some(i => {
+                    const mat = products[i].variants[0].split(' ')[0];
+                    return mat === currentFilter;
+                });
+                card.classList.toggle('hidden', !hasMaterial);
+            });
+        }
+
+        function initFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    applyFilter();
+                });
+            });
+        }
+
+        // ========================================================================
+        // ФОРМИРОВАНИЕ СТРОКИ (v1.3 — signature merging + volume linking)
+        // Продукты с одинаковым набором материал+объём объединяются
+        // Volume linking: одинаковый объём между соседними сегментами → 1 раз
+        // Квас Яхонт — отдельный сегмент, ВСЕГДА ПОСЛЕДНИЙ (не сливается с другими)
+        // ========================================================================
+        const VOL_ORDER = ['0,31', '0,33', '0,4', '0,44', '0,45', '0,43', '0,47', '0,48', '0,5', '0,62', '1,0', '1,1', '1,2', '1,25', '1,3', '1,35', '1,5'];
+        const INTERNAL_MAT_ORDER = ['ст', 'ж-б', 'пэт'];
+
+        // --- Signature: уникальный набор material+volume продукта ---
+        function makeSignature(variants) {
+            return variants
+                .sort((a, b) => {
+                    const mi = INTERNAL_MAT_ORDER.indexOf(a.material) - INTERNAL_MAT_ORDER.indexOf(b.material);
+                    if (mi !== 0) return mi;
+                    return VOL_ORDER.indexOf(a.volume) - VOL_ORDER.indexOf(b.volume);
+                })
+                .map(v => v.material + ' ' + v.volume)
+                .join('|');
+        }
+
+        // --- Compound сегмент из имён и вариантов ---
+        function formatCompoundSegment(names, variants) {
+            const matGroups = {};
+            variants.forEach(v => {
+                if (!matGroups[v.material]) matGroups[v.material] = [];
+                if (!matGroups[v.material].includes(v.volume)) matGroups[v.material].push(v.volume);
+            });
+
+            const orderedMats = Object.keys(matGroups).sort((a, b) =>
+                INTERNAL_MAT_ORDER.indexOf(a) - INTERNAL_MAT_ORDER.indexOf(b)
+            );
+
+            const parts = [];
+            orderedMats.forEach(mat => {
+                const vols = matGroups[mat].sort((a, b) => VOL_ORDER.indexOf(a) - VOL_ORDER.indexOf(b));
+                parts.push(mat + ' ' + vols.join('/'));
+            });
+
+            // Определяем первый и последний объём для volume linking
+            const firstVol = matGroups[orderedMats[0]].sort((a, b) => VOL_ORDER.indexOf(a) - VOL_ORDER.indexOf(b))[0];
+            const lastMat = orderedMats[orderedMats.length - 1];
+            const lastVol = matGroups[lastMat].sort((a, b) => VOL_ORDER.indexOf(a) - VOL_ORDER.indexOf(b)).pop();
+
+            return {
+                text: names.join('/') + ' ' + parts.join('/'),
+                material: lastMat,
+                firstVolume: firstVol,
+                lastVolume: lastVol
+            };
+        }
+
+        // --- Главная функция ---
+        function updateResult() {
+            // 1. Собираем выбранные позиции, группируем по имени продукта
+            const productGroups = {};
+            products.forEach((product, index) => {
+                const selected = state[index] || new Set();
+                if (selected.size === 0) return;
+                const variant = product.variants[0];
+                const parts = variant.split(' ');
+                if (!productGroups[product.name]) productGroups[product.name] = [];
+                productGroups[product.name].push({ material: parts[0], volume: parts[1] });
+            });
+
+            if (Object.keys(productGroups).length === 0) {
+                document.getElementById('resultText').innerHTML = '<span class="empty">Выберите хотя бы один товар</span>';
+                return;
+            }
+
+            // 2. Извлекаем Квас Яхонт (не участвует в signature-группировке)
+            const kvasVariants = productGroups['Квас Яхонт'];
+            delete productGroups['Квас Яхонт'];
+
+            // 3. Группируем остальные по signature
+            const signatureGroups = {};
+            Object.keys(productGroups).forEach(name => {
+                const sig = makeSignature(productGroups[name]);
+                if (!signatureGroups[sig]) signatureGroups[sig] = { names: [], variants: [] };
+                signatureGroups[sig].names.push(name);
+                productGroups[name].forEach(v => {
+                    if (!signatureGroups[sig].variants.some(sv => sv.material === v.material && sv.volume === v.volume)) {
+                        signatureGroups[sig].variants.push(v);
+                    }
+                });
+            });
+
+            // 4. Сортируем: группы со ст → группы только ж-б (алфавитно)
+            const sigKeys = Object.keys(signatureGroups);
+            const stSigs = sigKeys
+                .filter(k => signatureGroups[k].variants.some(v => v.material === 'ст'))
+                .sort((a, b) => {
+                    const na = signatureGroups[a].names.sort((x, y) => x.localeCompare(y, 'ru'))[0];
+                    const nb = signatureGroups[b].names.sort((x, y) => x.localeCompare(y, 'ru'))[0];
+                    return na.localeCompare(nb, 'ru');
+                });
+            const jbOnlySigs = sigKeys
+                .filter(k => !signatureGroups[k].variants.some(v => v.material === 'ст'))
+                .sort((a, b) => {
+                    const na = signatureGroups[a].names.sort((x, y) => x.localeCompare(y, 'ru'))[0];
+                    const nb = signatureGroups[b].names.sort((x, y) => x.localeCompare(y, 'ru'))[0];
+                    return na.localeCompare(nb, 'ru');
+                });
+            const orderedSigs = [...stSigs, ...jbOnlySigs];
+
+            // 5. Формируем compound-сегменты (без Кваса)
+            const allSegments = [];
+            orderedSigs.forEach(sig => {
+                const group = signatureGroups[sig];
+                const names = group.names.sort((a, b) => a.localeCompare(b, 'ru'));
+                allSegments.push(formatCompoundSegment(names, group.variants));
+            });
+
+            // 6. Квас Яхонт — отдельный сегмент ВСЕГДА ПОСЛЕДНИЙ
+            if (kvasVariants) {
+                allSegments.push(formatCompoundSegment(['Квас Яхонт'], kvasVariants));
+            }
+
+            // 5. Material dedup: материал только на ПОСЛЕДНЕМ сегменте каждого типа
+            const lastMatIndex = {};
+            allSegments.forEach((seg, i) => {
+                if (seg.material) lastMatIndex[seg.material] = i;
+            });
+            allSegments.forEach((seg, i) => {
+                if (seg.material && lastMatIndex[seg.material] !== i) {
+                    seg.text = seg.text.split(' ' + seg.material + ' ').join(' ');
+                }
+            });
+
+            // 6. Volume linking: одинаковый объём между соседними сегментами → пишется 1 раз
+            for (let i = 0; i < allSegments.length - 1; i++) {
+                const curr = allSegments[i];
+                const next = allSegments[i + 1];
+                if (curr.lastVolume !== null && curr.lastVolume === next.firstVolume) {
+                    // Убираем последний объём из текста текущего сегмента
+                    curr.text = curr.text.replace(/ \d+,\d+$/, '');
+                }
+            }
+
+            const resultString = allSegments.map(s => s.text).filter(t => t).join('/');
+            document.getElementById('resultText').innerHTML = '<span class="prefix">МПК</span> (' + resultString + ')';
+        }
+
+        // ========================================================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ========================================================================
+        renderProducts();
+        initFilters();
+        document.getElementById('clearBtn').addEventListener('click', clearAll);
+        document.getElementById('copyBtn').addEventListener('click', copyResult);
+    </script>
+</body>
+</html>
