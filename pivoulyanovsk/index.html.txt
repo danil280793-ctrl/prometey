@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор строки товаров</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f8;
+            color: #1a2332;
+            min-height: 100vh;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            padding: 20px;
+            padding-top: 0;
+        }
+
+        .result-section {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(240, 244, 248, 0.92);
+            backdrop-filter: blur(12px);
+            padding: 16px 0 12px 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .result-section .result-inner {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: #6b7a93;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        .result-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .selected-count {
+            font-size: 13px;
+            color: #6b7a93;
+            font-weight: 500;
+        }
+
+        .clear-btn,
+        .copy-btn {
+            background: #f0f4f8;
+            border: 1px solid #dce3ed;
+            color: #4a5a78;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .clear-btn:hover,
+        .copy-btn:hover {
+            border-color: #4a7db5;
+            background: #e8edf5;
+            color: #1a3a5a;
+        }
+
+        .copy-btn.copied {
+            border-color: #2d8f5c;
+            background: #e6f5ed;
+            color: #1a6a3a;
+        }
+
+        .result-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a2332;
+            word-break: break-word;
+            line-height: 1.4;
+            min-height: 30px;
+            padding: 4px 0;
+        }
+
+        .result-text .empty {
+            color: #9aabbf;
+            font-weight: 400;
+            font-size: 15px;
+        }
+
+        .result-text .prefix {
+            color: #6b7a93;
+            font-weight: 400;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-btn {
+            background: #ffffff;
+            border: 1px solid #dce3ed;
+            color: #4a5a78;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .filter-btn:hover {
+            border-color: #b0c4d8;
+            background: #f8fafc;
+        }
+
+        .filter-btn.active {
+            border-color: #4a7db5;
+            background: #e8f0fe;
+            color: #1a4a7a;
+        }
+
+        .filter-count {
+            font-size: 11px;
+            color: #8a9bb0;
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        .blocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+            padding-bottom: 30px;
+        }
+
+        .block-card {
+            background: #ffffff;
+            border: 1px solid #e8edf4;
+            border-radius: 14px;
+            padding: 14px 16px 16px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        }
+
+        .block-card:hover {
+            border-color: #d0dce8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .block-card.has-active {
+            border-color: #4a7db5;
+            background: #f8faff;
+            box-shadow: 0 2px 12px rgba(74, 125, 181, 0.08);
+        }
+
+        .block-card.hidden {
+            display: none;
+        }
+
+        .block-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .block-header .block-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a2332;
+            flex: 1;
+        }
+
+        .block-header .select-all-btn {
+            font-size: 11px;
+            color: #4a7db5;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .block-header .select-all-btn:hover {
+            background: #e8f0fe;
+        }
+
+        .variants {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .variant-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f5f8fc;
+            padding: 4px 10px 4px 6px;
+            border-radius: 20px;
+            border: 1px solid #e8edf4;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 12px;
+            color: #4a5a78;
+        }
+
+        .variant-item:hover {
+            border-color: #c8d4e0;
+            background: #f0f4fa;
+        }
+
+        .variant-item.active {
+            border-color: #4a7db5;
+            background: #e8f0fe;
+            color: #1a3a6a;
+        }
+
+        .variant-item input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #4a7db5;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .variant-item .label {
+            user-select: none;
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a2332;
+            color: #f0f4f8;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .blocks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-text {
+                font-size: 15px;
+            }
+
+            .block-card {
+                padding: 12px;
+            }
+
+            .filters {
+                gap: 6px;
+            }
+
+            .filter-btn {
+                padding: 4px 14px;
+                font-size: 12px;
+            }
+
+            .result-section .result-inner {
+                padding: 12px 16px;
+            }
+
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toast" id="toast"></div>
+
+        <div class="result-section">
+            <div class="result-inner">
+                <div class="result-header">
+                    <div class="result-label">Итоговая строка</div>
+                    <div class="result-actions">
+                        <span class="selected-count" id="selectedCount">Выбрано: 0</span>
+                        <button class="copy-btn" id="copyBtn">📋 Копировать</button>
+                        <button class="clear-btn" id="clearBtn">✕ Очистить</button>
+                    </div>
+                </div>
+                <div class="result-text" id="resultText">
+                    <span class="empty">Выберите хотя бы один товар</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters" id="filters">
+            <button class="filter-btn active" data-filter="all">Все <span class="filter-count" id="countAll">0</span></button>
+            <button class="filter-btn" data-filter="ст">ст <span class="filter-count" id="countст">0</span></button>
+            <button class="filter-btn" data-filter="ж-б">ж-б <span class="filter-count" id="countж-б">0</span></button>
+            <button class="filter-btn" data-filter="пэт">пэт <span class="filter-count" id="countпэт">0</span></button>
+            <button class="filter-btn" data-filter="ст/ж-б">ст/ж-б <span class="filter-count" id="countст/ж-б">0</span></button>
+        </div>
+
+        <div class="blocks-grid" id="blocksGrid"></div>
+    </div>
+
+    <script>
+        // ========== ДАННЫЕ ==========
+        const products = [
+            { name: 'Разливной Колос', variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: 'Windmolen', variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: 'La Moustache', variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: 'Минское', variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: 'SnackBar', variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: 'Zlatogor', variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: "Pablo's Camaradas", variants: ['ст 0,45', 'ж-б 0,45'] },
+            { name: 'Волжская Пивоварня', variants: ['ст 0,45', 'ж-б 0,45', 'пэт 0,9'] },
+            { name: 'Свежее с пивоварни', variants: ['ст 0,45', 'ж-б 0,45', 'пэт 1,0'] },
+            { name: 'Рижское', variants: ['ст 0,45', 'ж-б 0,45', 'пэт 1,3'] },
+            { name: 'Австрийское', variants: ['пэт 1,5'] },
+            { name: 'Живая Варка', variants: ['пэт 1,5'] },
+            { name: 'Пшеничное', variants: ['пэт 1,5'] },
+            { name: 'Добрый хлеб', variants: ['пэт 1,5'] },
+            { name: 'Ржаной бочонок', variants: ['ст 0,45', 'ж-б 0,45', 'пэт 1,5'] },
+        ];
+
+        // ========== СОСТОЯНИЕ ==========
+        const state = {};
+        products.forEach((product, index) => {
+            state[index] = new Set();
+        });
+
+        let currentFilter = 'all';
+
+        // ========== TOAST ==========
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // ========== РЕНДЕР ==========
+        function renderProducts() {
+            const grid = document.getElementById('blocksGrid');
+            grid.innerHTML = '';
+
+            products.forEach((product, index) => {
+                const card = document.createElement('div');
+                card.className = 'block-card';
+                card.dataset.index = index;
+
+                const header = document.createElement('div');
+                header.className = 'block-header';
+
+                const title = document.createElement('span');
+                title.className = 'block-title';
+                title.textContent = product.name;
+                header.appendChild(title);
+
+                if (product.variants.length >= 2) {
+                    const selectAllBtn = document.createElement('button');
+                    selectAllBtn.className = 'select-all-btn';
+                    selectAllBtn.textContent = '☑ Все';
+                    selectAllBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const checkboxes = card.querySelectorAll('.variant-item input[type="checkbox"]');
+                        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                        checkboxes.forEach(cb => cb.checked = !allChecked);
+                        checkboxes.forEach(cb => cb.dispatchEvent(new Event('change')));
+                    });
+                    header.appendChild(selectAllBtn);
+                }
+
+                card.appendChild(header);
+
+                const variantsContainer = document.createElement('div');
+                variantsContainer.className = 'variants';
+
+                product.variants.forEach(variant => {
+                    const item = document.createElement('div');
+                    item.className = 'variant-item';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `p${index}_${variant.replace(/\s/g, '_')}`;
+                    checkbox.dataset.variant = variant;
+
+                    checkbox.addEventListener('change', () => {
+                        updateState(index);
+                        updateResult();
+                        updateCardStyles();
+                        updateCounts();
+                        applyFilter();
+                    });
+
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = variant;
+
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    variantsContainer.appendChild(item);
+                });
+
+                card.appendChild(variantsContainer);
+                grid.appendChild(card);
+            });
+
+            updateResult();
+            updateCardStyles();
+            updateCounts();
+            applyFilter();
+        }
+
+        // ========== ОЧИСТКА ==========
+        function clearAll() {
+            products.forEach((_, index) => {
+                state[index] = new Set();
+            });
+
+            document.querySelectorAll('.variant-item input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+
+            updateCardStyles();
+            updateCounts();
+            updateResult();
+            applyFilter();
+            showToast('✅ Всё очищено');
+        }
+
+        // ========== КОПИРОВАНИЕ ==========
+        function copyResult() {
+            const resultEl = document.getElementById('resultText');
+            const text = resultEl.textContent;
+
+            if (!text || text.includes('Выберите хотя бы один товар')) {
+                showToast('❌ Нет данных для копирования');
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.classList.add('copied');
+                btn.textContent = '✅ Скопировано';
+                showToast('📋 Скопировано!');
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋 Копировать';
+                }, 2000);
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('📋 Скопировано!');
+            });
+        }
+
+        // ========== ПОЛУЧИТЬ МАТЕРИАЛЫ ТОВАРА ==========
+        function getProductMaterials(index) {
+            const product = products[index];
+            const materials = new Set();
+            product.variants.forEach(v => {
+                const material = v.split(' ')[0];
+                materials.add(material);
+            });
+            return Array.from(materials);
+        }
+
+        // ========== ОБНОВЛЕНИЕ СОСТОЯНИЯ ==========
+        function updateState(index) {
+            const card = document.querySelector(`.block-card[data-index="${index}"]`);
+            if (!card) return;
+
+            const checked = card.querySelectorAll('.variant-item input[type="checkbox"]:checked');
+            state[index] = new Set();
+            checked.forEach(cb => state[index].add(cb.dataset.variant));
+        }
+
+        // ========== СТИЛИ КАРТОЧЕК ==========
+        function updateCardStyles() {
+            document.querySelectorAll('.block-card').forEach(card => {
+                const hasActive = card.querySelector('.variant-item input[type="checkbox"]:checked');
+                card.classList.toggle('has-active', !!hasActive);
+
+                const items = card.querySelectorAll('.variant-item');
+                items.forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    item.classList.toggle('active', cb.checked);
+                });
+            });
+        }
+
+        // ========== ПОДСЧЁТ ВЫБРАННЫХ ==========
+        function updateCounts() {
+            const totalSelected = Object.values(state).reduce((sum, set) => sum + set.size, 0);
+            document.getElementById('selectedCount').textContent = `Выбрано: ${totalSelected}`;
+
+            const counts = { all: 0, 'ст': 0, 'ж-б': 0, 'пэт': 0, 'ст/ж-б': 0 };
+
+            products.forEach((product, index) => {
+                const selected = state[index] || new Set();
+                if (selected.size === 0) return;
+
+                const materials = getProductMaterials(index);
+                const hasAll = materials.length > 0;
+
+                if (hasAll) counts.all++;
+
+                materials.forEach(m => {
+                    if (counts[m] !== undefined) counts[m]++;
+                });
+
+                if (materials.includes('ст') && materials.includes('ж-б')) {
+                    counts['ст/ж-б']++;
+                }
+            });
+
+            document.getElementById('countAll').textContent = counts.all;
+            document.getElementById('countст').textContent = counts['ст'];
+            document.getElementById('countж-б').textContent = counts['ж-б'];
+            document.getElementById('countпэт').textContent = counts['пэт'];
+            document.getElementById('countст/ж-б').textContent = counts['ст/ж-б'];
+        }
+
+        // ========== ФИЛЬТРАЦИЯ ==========
+        function applyFilter() {
+            const cards = document.querySelectorAll('.block-card');
+
+            cards.forEach(card => {
+                const index = parseInt(card.dataset.index);
+                const materials = getProductMaterials(index);
+
+                if (currentFilter === 'all') {
+                    card.classList.remove('hidden');
+                    return;
+                }
+
+                if (currentFilter === 'ст/ж-б') {
+                    const hasGlass = materials.includes('ст');
+                    const hasCan = materials.includes('ж-б');
+                    if (hasGlass && hasCan) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                if (materials.includes(currentFilter)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        // ========== ФОРМИРОВАНИЕ СТРОКИ (v2.5.0) ==========
+        function getMaterialSet(variants) {
+            const materials = new Set();
+            variants.forEach(v => {
+                const material = v.split(' ')[0];
+                materials.add(material);
+            });
+            return materials;
+        }
+
+        function getVolumesSet(variants) {
+            const volumes = new Set();
+            variants.forEach(v => {
+                const volume = v.split(' ')[1];
+                volumes.add(volume);
+            });
+            return volumes;
+        }
+
+        function hasPet(variants) {
+            return variants.some(v => v.startsWith('пэт'));
+        }
+
+        function formatSpecialItem(item, petVolume) {
+            const hasGlass = item.hasGlass;
+            const hasCan = item.hasCan;
+            const hasPetVariant = item.hasPet;
+
+            let materialsStr = '';
+            let volumesStr = '';
+
+            if (hasGlass && hasCan && hasPetVariant) {
+                materialsStr = 'ст/ж-б';
+                volumesStr = `0,45/пэт ${petVolume}`;
+            } else if (hasGlass && hasPetVariant && !hasCan) {
+                materialsStr = 'ст';
+                volumesStr = `0,45/пэт ${petVolume}`;
+            } else if (hasCan && hasPetVariant && !hasGlass) {
+                materialsStr = 'ж-б';
+                volumesStr = `0,45/пэт ${petVolume}`;
+            } else {
+                const mArr = Array.from(item.materials).sort((a, b) => {
+                    const order = ['ст', 'ж-б', 'пэт'];
+                    return order.indexOf(a) - order.indexOf(b);
+                });
+                materialsStr = mArr.join('/');
+                const vArr = Array.from(item.volumes).sort();
+                const volumeParts = vArr.map(v => {
+                    if (v === '0,45') return v;
+                    return `пэт ${v}`;
+                });
+                volumesStr = volumeParts.join('/');
+            }
+
+            return `${item.name} ${materialsStr} ${volumesStr}`;
+        }
+
+        function formatResult() {
+            const selectedItems = [];
+
+            products.forEach((product, index) => {
+                const selected = state[index] || new Set();
+                if (selected.size === 0) return;
+
+                const variants = Array.from(selected).sort();
+                const materials = getMaterialSet(variants);
+                const volumes = getVolumesSet(variants);
+                const hasPetVariant = hasPet(variants);
+
+                selectedItems.push({
+                    name: product.name,
+                    variants: variants,
+                    materials: materials,
+                    volumes: volumes,
+                    hasPet: hasPetVariant,
+                    hasGlass: materials.has('ст'),
+                    hasCan: materials.has('ж-б'),
+                });
+            });
+
+            if (selectedItems.length === 0) return [];
+
+            // ===== ГРУППИРОВКА =====
+            const group1 = [];
+            const group2 = [];
+            const group3 = [];
+            const group4 = [];
+            const group5 = [];
+            const group6 = [];
+
+            selectedItems.forEach(item => {
+                const name = item.name;
+                const has45 = item.volumes.has('0,45');
+                const hasPetVariant = item.hasPet;
+                const hasGlass = item.hasGlass;
+                const hasCan = item.hasCan;
+                const isKvass = (name === 'Добрый хлеб' || name === 'Ржаной бочонок');
+
+                // === Группа 6: Квас с 0,45 + ПЭТ ===
+                if (isKvass && has45 && hasPetVariant) {
+                    group6.push(item);
+                    return;
+                }
+
+                // === Группа 5: ПЭТ (Квас только с ПЭТ) ===
+                if (isKvass && hasPetVariant && !has45) {
+                    group5.push(item);
+                    return;
+                }
+
+                // === Специальные группы ===
+                if (name === 'Волжская Пивоварня') {
+                    if (hasPetVariant && has45) {
+                        group2.push(item);
+                        return;
+                    }
+                    if (has45 && !hasPetVariant) {
+                        group1.push(item);
+                        return;
+                    }
+                    if (hasPetVariant && !has45) {
+                        group5.push(item);
+                        return;
+                    }
+                }
+
+                if (name === 'Свежее с пивоварни') {
+                    if (hasPetVariant && has45) {
+                        group3.push(item);
+                        return;
+                    }
+                    if (has45 && !hasPetVariant) {
+                        group1.push(item);
+                        return;
+                    }
+                    if (hasPetVariant && !has45) {
+                        group5.push(item);
+                        return;
+                    }
+                }
+
+                if (name === 'Рижское') {
+                    if (hasPetVariant && has45) {
+                        group4.push(item);
+                        return;
+                    }
+                    if (has45 && !hasPetVariant) {
+                        group1.push(item);
+                        return;
+                    }
+                    if (hasPetVariant && !has45) {
+                        group5.push(item);
+                        return;
+                    }
+                }
+
+                // === Группа 1: 0,45 ===
+                if (has45) {
+                    group1.push(item);
+                    return;
+                }
+
+                // === Группа 5: ПЭТ ===
+                if (hasPetVariant && !has45) {
+                    group5.push(item);
+                    return;
+                }
+            });
+
+            const resultParts = [];
+
+            // --- Группа 1: 0,45 ---
+            if (group1.length > 0) {
+                const onlyGlass = group1.filter(item => item.hasGlass && !item.hasCan);
+                const onlyCan = group1.filter(item => !item.hasGlass && item.hasCan);
+                const both = group1.filter(item => item.hasGlass && item.hasCan);
+
+                const onlyGlassNames = onlyGlass.map(item => item.name).sort();
+                const onlyCanNames = onlyCan.map(item => item.name).sort();
+                const bothNames = both.map(item => item.name).sort();
+
+                let group1Parts = [];
+
+                if (onlyGlassNames.length > 0) {
+                    group1Parts.push(onlyGlassNames.join('/') + ' ст');
+                }
+
+                if (onlyCanNames.length > 0) {
+                    group1Parts.push(onlyCanNames.join('/') + ' ж-б');
+                }
+
+                if (bothNames.length > 0) {
+                    group1Parts.push(bothNames.join('/') + ' ст/ж-б');
+                }
+
+                let group1String = group1Parts.join('/');
+
+                if (group1Parts.length > 0) {
+                    const lastPart = group1Parts[group1Parts.length - 1];
+                    const partsWithoutLast = group1Parts.slice(0, -1);
+                    const lastWithVolume = lastPart + ' 0,45';
+                    const allParts = [...partsWithoutLast, lastWithVolume];
+                    group1String = allParts.join('/');
+                }
+
+                resultParts.push(group1String);
+            }
+
+            // --- Группа 2: Волжская Пивоварня ---
+            if (group2.length > 0) {
+                group2.forEach(item => {
+                    resultParts.push(formatSpecialItem(item, '0,9'));
+                });
+            }
+
+            // --- Группа 3: Свежее с пивоварни ---
+            if (group3.length > 0) {
+                group3.forEach(item => {
+                    resultParts.push(formatSpecialItem(item, '1,0'));
+                });
+            }
+
+            // --- Группа 4: Рижское ---
+            if (group4.length > 0) {
+                group4.forEach(item => {
+                    resultParts.push(formatSpecialItem(item, '1,3'));
+                });
+            }
+
+            // --- Группа 5: ПЭТ ---
+            if (group5.length > 0) {
+                // Разделяем Квас и не-Квас
+                const kvassPet = [];
+                const nonKvassPet = [];
+
+                group5.forEach(item => {
+                    if (item.name === 'Добрый хлеб' || item.name === 'Ржаной бочонок') {
+                        kvassPet.push(item);
+                    } else {
+                        nonKvassPet.push(item);
+                    }
+                });
+
+                // Группируем по объёмам
+                const volumeGroups = {};
+
+                // Сначала не-Квас
+                nonKvassPet.forEach(item => {
+                    const volKey = Array.from(item.volumes).sort().join('|');
+                    if (!volumeGroups[volKey]) {
+                        volumeGroups[volKey] = {
+                            names: [],
+                            volumes: item.volumes,
+                            isKvass: false
+                        };
+                    }
+                    volumeGroups[volKey].names.push(item.name);
+                });
+
+                // Потом Квас
+                kvassPet.forEach(item => {
+                    const volKey = Array.from(item.volumes).sort().join('|');
+                    if (!volumeGroups[volKey]) {
+                        volumeGroups[volKey] = {
+                            names: [],
+                            volumes: item.volumes,
+                            isKvass: true
+                        };
+                    }
+                    volumeGroups[volKey].names.push(item.name);
+                    volumeGroups[volKey].isKvass = true;
+                });
+
+                const volumeOrder = ['0,9', '1,0', '1,3', '1,5'];
+                const sortedKeys = Object.keys(volumeGroups).sort((a, b) => {
+                    const volA = a.split('|')[0];
+                    const volB = b.split('|')[0];
+                    return volumeOrder.indexOf(volA) - volumeOrder.indexOf(volB);
+                });
+
+                const parts = [];
+                let kvassAdded = false;
+
+                sortedKeys.forEach((key, index) => {
+                    const group = volumeGroups[key];
+                    let namesStr = group.names.sort().join('/');
+
+                    // Если есть Квас в этой группе, добавляем "Квас" перед первой такой группой
+                    if (group.isKvass && !kvassAdded) {
+                        namesStr = `Квас ${namesStr}`;
+                        kvassAdded = true;
+                    }
+
+                    const volumesStr = Array.from(group.volumes).sort().join('/');
+                    const isLast = index === sortedKeys.length - 1;
+
+                    let resultStr = namesStr;
+                    if (isLast) {
+                        resultStr += ` пэт ${volumesStr}`;
+                    } else {
+                        resultStr += ` ${volumesStr}`;
+                    }
+                    parts.push(resultStr);
+                });
+
+                resultParts.push(parts.join('/'));
+            }
+
+            // --- Группа 6: Квас с 0,45 + ПЭТ ---
+            if (group6.length > 0) {
+                group6.forEach(item => {
+                    const hasGlass = item.hasGlass;
+                    const hasCan = item.hasCan;
+                    const hasPetVariant = item.hasPet;
+
+                    let materialsStr = '';
+                    let volumesStr = '';
+
+                    if (hasGlass && hasCan && hasPetVariant) {
+                        materialsStr = 'ст/ж-б';
+                        volumesStr = '0,45/пэт 1,5';
+                    } else if (hasGlass && hasPetVariant && !hasCan) {
+                        materialsStr = 'ст';
+                        volumesStr = '0,45/пэт 1,5';
+                    } else if (hasCan && hasPetVariant && !hasGlass) {
+                        materialsStr = 'ж-б';
+                        volumesStr = '0,45/пэт 1,5';
+                    } else {
+                        const mArr = Array.from(item.materials).sort((a, b) => {
+                            const order = ['ст', 'ж-б', 'пэт'];
+                            return order.indexOf(a) - order.indexOf(b);
+                        });
+                        materialsStr = mArr.join('/');
+                        const vArr = Array.from(item.volumes).sort();
+                        const volumeParts = vArr.map(v => {
+                            if (v === '0,45') return v;
+                            return `пэт ${v}`;
+                        });
+                        volumesStr = volumeParts.join('/');
+                    }
+
+                    // Без "Квас" в начале
+                    resultParts.push(`${item.name} ${materialsStr} ${volumesStr}`);
+                });
+            }
+
+            const cleanParts = resultParts.map(p => p.trim()).filter(p => p.length > 0);
+            return cleanParts;
+        }
+
+        function updateResult() {
+            const parts = formatResult();
+            const resultEl = document.getElementById('resultText');
+
+            if (parts.length === 0) {
+                resultEl.innerHTML = '<span class="empty">Выберите хотя бы один товар</span>';
+                return;
+            }
+
+            const resultString = parts.join('/');
+            resultEl.innerHTML = `<span class="prefix">пиво Ульяновск</span> (${resultString})`;
+        }
+
+        // ========== ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ ==========
+        function initFilters() {
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    applyFilter();
+                });
+            });
+        }
+
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
+        renderProducts();
+        initFilters();
+
+        document.getElementById('clearBtn').addEventListener('click', clearAll);
+        document.getElementById('copyBtn').addEventListener('click', copyResult);
+
+        console.log('🍻 Конструктор строки товаров v2.5.0 загружен!');
+        console.log('✅ Полная логика групп 1-6');
+        console.log('✅ Квас: только ПЭТ → с "Квас" в Группе 5');
+        console.log('✅ Квас: 0,45 + ПЭТ → в Группе 6 без "Квас"');
+        console.log('✅ Квас в Группе 5 пишется последним');
+    </script>
+</body>
+</html>
