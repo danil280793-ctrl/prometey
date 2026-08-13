@@ -863,25 +863,24 @@
                     if (!volumeGroups[volKey]) {
                         volumeGroups[volKey] = {
                             names: [],
+                            kvassNames: [],
                             volumes: item.volumes,
-                            isKvass: false
                         };
                     }
                     volumeGroups[volKey].names.push(item.name);
                 });
 
-                // Потом Квас
+                // Потом Квас — храним имена отдельно
                 kvassPet.forEach(item => {
                     const volKey = Array.from(item.volumes).sort().join('|');
                     if (!volumeGroups[volKey]) {
                         volumeGroups[volKey] = {
                             names: [],
+                            kvassNames: [],
                             volumes: item.volumes,
-                            isKvass: true
                         };
                     }
-                    volumeGroups[volKey].names.push(item.name);
-                    volumeGroups[volKey].isKvass = true;
+                    volumeGroups[volKey].kvassNames.push(item.name);
                 });
 
                 const volumeOrder = ['0,9', '1,0', '1,3', '1,5'];
@@ -892,17 +891,21 @@
                 });
 
                 const parts = [];
-                let kvassAdded = false;
 
                 sortedKeys.forEach((key, index) => {
                     const group = volumeGroups[key];
-                    let namesStr = group.names.sort().join('/');
+                    const allNames = [];
 
-                    // Если есть Квас в этой группе, добавляем "Квас" перед первой такой группой
-                    if (group.isKvass && !kvassAdded) {
-                        namesStr = `Квас ${namesStr}`;
-                        kvassAdded = true;
-                    }
+                    // Сначала не-Квас имена
+                    group.names.sort().forEach(n => allNames.push(n));
+
+                    // Потом Квас имена — "Квас" только перед первым
+                    const kvassSorted = group.kvassNames.sort();
+                    kvassSorted.forEach((n, ki) => {
+                        allNames.push(ki === 0 ? 'Квас ' + n : n);
+                    });
+
+                    const namesStr = allNames.join('/');
 
                     const volumesStr = Array.from(group.volumes).sort().join('/');
                     const isLast = index === sortedKeys.length - 1;
