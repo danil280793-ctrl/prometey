@@ -489,7 +489,7 @@
                 </div>
                 <div class="logic-item">
                     <span>•</span>
-                    <span><span class="highlight">Москвич ст+ж-б</span> — комбо выводится после блока ст.</span>
+                    <span><span class="highlight">Москвич</span> — все парные и тройные комбинации образуют отдельные комбо.</span>
                 </div>
                 <div class="logic-item">
                     <span>•</span>
@@ -518,7 +518,8 @@
         };
         const MOSKVICH = {
             st: { id: 'moskvich_st', name: 'Москвич', type: 'ст', volume: '0,33' },
-            jb: { id: 'moskvich_jb', name: 'Москвич', type: 'ж-б', volume: '0,43' }
+            jb: { id: 'moskvich_jb', name: 'Москвич', type: 'ж-б', volume: '0,43' },
+            pet: { id: 'moskvich_pet', name: 'Москвич', type: 'пэт', volume: '1,2' }
         };
         const ZHIGULI = {
             jb: { id: 'zhiguli_jb', name: 'Жигулевское', type: 'ж-б', volume: '0,43' },
@@ -543,7 +544,7 @@
                 { id: 'krusovice_jb', name: 'Крушовице', type: 'ж-б', volume: '0,43' }
             ]},
             { id: 3, title: 'Выбор типа', multi: true, items: [
-                { name: 'Москвич', cfg: MOSKVICH, opts: ['ст', 'ж-б'] },
+                { name: 'Москвич', cfg: MOSKVICH, opts: ['ст', 'ж-б', 'пэт'] },
                 { name: 'Бочкарев', cfg: BOCHKAREV, opts: ['ст', 'ж-б', 'пэт'] },
                 { name: 'Жигулевское', cfg: ZHIGULI, opts: ['ж-б', 'пэт'] },
                 { name: 'Охота', cfg: OKHOTA, opts: ['ж-б', 'пэт'] }
@@ -623,7 +624,11 @@
                 let opt = btn.dataset.opt;
                 let id = null;
 
-                if (name === 'Москвич') { id = opt === 'ст' ? MOSKVICH.st.id : MOSKVICH.jb.id; }
+                if (name === 'Москвич') {
+                    if (opt === 'ст') id = MOSKVICH.st.id;
+                    else if (opt === 'ж-б') id = MOSKVICH.jb.id;
+                    else if (opt === 'пэт') id = MOSKVICH.pet.id;
+                }
                 else if (name === 'Бочкарев') {
                     if (opt === 'ст') id = BOCHKAREV.st.id;
                     else if (opt === 'ж-б') id = BOCHKAREV.jb.id;
@@ -644,7 +649,7 @@
             let multi = wrap.dataset.multi;
             if (multi) {
                 let ids = [];
-                if (multi === 'Москвич') ids = [MOSKVICH.st.id, MOSKVICH.jb.id];
+                if (multi === 'Москвич') ids = [MOSKVICH.st.id, MOSKVICH.jb.id, MOSKVICH.pet.id];
                 else if (multi === 'Бочкарев') ids = [BOCHKAREV.st.id, BOCHKAREV.jb.id, BOCHKAREV.pet.id];
                 else if (multi === 'Жигулевское') ids = [ZHIGULI.jb.id, ZHIGULI.pet.id];
                 else if (multi === 'Охота') ids = [OKHOTA.jb.id, OKHOTA.pet.id];
@@ -685,7 +690,11 @@
 
             let moskSt = selected.has(MOSKVICH.st.id);
             let moskJb = selected.has(MOSKVICH.jb.id);
-            let moskCombo = moskSt && moskJb;
+            let moskPet = selected.has(MOSKVICH.pet.id);
+            let moskComboStJb = moskSt && moskJb && !moskPet;
+            let moskComboAll = moskSt && moskJb && moskPet;
+            let moskComboJbPet = !moskSt && moskJb && moskPet;
+            let moskComboStPet = moskSt && !moskJb && moskPet;
 
             let zhigJb = selected.has(ZHIGULI.jb.id);
             let zhigPet = selected.has(ZHIGULI.pet.id);
@@ -698,9 +707,18 @@
             if (!zhigCombo && zhigJb) jbItems.push({ name: 'Жигулевское', volume: '0,43' });
             if (!okhCombo && okhJb) jbItems.push({ name: 'Охота', volume: '0,43' });
 
-            if (!moskCombo) {
+            // Москвич в пулы только при соло-выборе (без комбо)
+            if (!moskComboStJb && !moskComboAll && !moskComboJbPet && !moskComboStPet) {
                 if (moskJb) jbItems.push({ name: 'Москвич', volume: '0,43' });
                 if (moskSt) stItems.push({ name: 'Москвич', volume: '0,33' });
+            } else if (moskComboStJb) {
+                // ст+ж-б: ж-б и ст не идут в пулы, комбо выведется отдельно
+            } else if (moskComboAll) {
+                // ст+ж-б+пэт: всё в один комбо
+            } else if (moskComboJbPet) {
+                // ж-б+пэт: отдельный комбо, ничего в пулы
+            } else if (moskComboStPet) {
+                // ст+пэт: отдельный комбо, ничего в пулы
             }
 
             // Определяем тип комбо Бочкарева
@@ -748,9 +766,13 @@
                 if (stResult.length) parts.push(stResult.join('/'));
             }
 
-            // 3. Москвич комбо (ст + ж-б) - строго ПОСЛЕ блока ст
-            if (moskCombo) {
+            // 3. Москвич комбо (после блока ст)
+            if (moskComboAll) {
+                parts.push(`Москвич ст 0,33/ж-б 0,43/пэт 1,2`);
+            } else if (moskComboStJb) {
                 parts.push(`Москвич ст 0,33/ж-б 0,43`);
+            } else if (moskComboStPet) {
+                parts.push(`Москвич ст 0,33/пэт 1,2`);
             }
 
             // 4. Бочкарев комбо
@@ -758,7 +780,12 @@
                 parts.push(bochCombo);
             }
 
-            // 5. Жигулевское/Охота комбо
+            // 5. Москвич комбо ж-б+пэт (без ст)
+            if (moskComboJbPet) {
+                parts.push(`Москвич ж-б 0,43/пэт 1,2`);
+            }
+
+            // 6. Жигулевское/Охота комбо (ж-б + пэт)
             if (zhigCombo || okhCombo) {
                 let comboNames = [];
                 if (zhigCombo) comboNames.push('Жигулевское');
@@ -766,11 +793,12 @@
                 parts.push(`${comboNames.join('/')} ж-б 0,43/пэт 1,2`);
             }
 
-            // 6. Унифицированный блок ПЭТ
+            // 7. Унифицированный блок ПЭТ
             let petPool = [];
             if (bochPet && !bochCombo) petPool.push({ name: 'Бочкарев', volume: '0,9' });
             if (zhigPet && !zhigCombo) petPool.push({ name: 'Жигулевское', volume: '1,2' });
             if (okhPet && !okhCombo) petPool.push({ name: 'Охота', volume: '1,2' });
+            if (moskPet && !moskComboAll && !moskComboJbPet && !moskComboStPet) petPool.push({ name: 'Москвич', volume: '1,2' });
 
             if (petPool.length > 0) {
                 let volGroups = new Map();
