@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню конструкторов товаров</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f4f7fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .menu-container {
+            max-width: 1300px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
+            padding: 2.5rem 2rem;
+            transition: all 0.2s ease;
+        }
+
+        .menu-header {
+            text-align: center;
+            margin-bottom: 2.8rem;
+            border-bottom: 2px solid #f0f4f8;
+            padding-bottom: 1.8rem;
+        }
+
+        .menu-header h1 {
+            font-size: 2.4rem;
+            font-weight: 600;
+            color: #0b1a2b;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .menu-header h1 span {
+            background: #eef3f9;
+            padding: 0.1rem 0.8rem;
+            border-radius: 60px;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: #1f3a5f;
+        }
+
+        .menu-subtitle {
+            color: #4a5f73;
+            font-size: 1.1rem;
+            margin-top: 0.4rem;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .menu-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 1.6rem 1.4rem 1.8rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 0 0 1px #e9edf2;
+            transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px -12px rgba(0, 20, 40, 0.15), 0 0 0 1px #d0d9e3;
+            border-color: #cbd6e2;
+            background: #fbfdff;
+        }
+
+        .card-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: #eef3f9;
+            padding: 0.2rem 0.9rem;
+            border-radius: 50px;
+            color: #1f3a5f;
+            align-self: flex-start;
+            margin-bottom: 0.8rem;
+            border: 1px solid #dde4ec;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0b1a2b;
+            line-height: 1.2;
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .card-title small {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #5b6f82;
+            margin-left: auto;
+            background: #f0f4fa;
+            padding: 0.1rem 0.7rem;
+            border-radius: 40px;
+            white-space: nowrap;
+        }
+
+        .card-desc {
+            color: #2c4056;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0.5rem 0 1.2rem;
+            flex-grow: 1;
+            opacity: 0.85;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.6rem;
+            border-top: 1px dashed #e2e9f0;
+            padding-top: 0.9rem;
+            font-size: 0.85rem;
+            color: #4f6479;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .tag {
+            background: #eef3f8;
+            padding: 0.1rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #1e3a5a;
+            letter-spacing: 0.02em;
+            border: 1px solid #d9e1ea;
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: #0b1a2b;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #f0f6fe;
+            padding: 0.3rem 1rem 0.3rem 1.2rem;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            border: 1px solid #d2deec;
+            margin-top: 0.6rem;
+            align-self: flex-start;
+        }
+
+        .card-link:hover {
+            background: #e1ebf7;
+            border-color: #a7bbd0;
+            color: #001b3a;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-link::after {
+            content: "→";
+            font-size: 1.1rem;
+            line-height: 1;
+            transition: transform 0.2s;
+        }
+
+        .card-link:hover::after {
+            transform: translateX(4px);
+        }
+
+        .footer-note {
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #5b6f82;
+            border-top: 1px solid #e9eff5;
+            padding-top: 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        .footer-note span {
+            background: #f2f6fb;
+            padding: 0.2rem 1rem;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            color: #1f3a5f;
+        }
+
+        @media (max-width: 640px) {
+            .menu-container {
+                padding: 1.5rem 1rem;
+            }
+            .menu-header h1 {
+                font-size: 1.8rem;
+            }
+            .menu-header h1 span {
+                font-size: 1.2rem;
+            }
+            .card-grid {
+                gap: 1.2rem;
+            }
+            .card-title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="menu-container">
+    <div class="menu-header">
+        <h1>
+            🍻 Конструкторы <span>строк</span>
+        </h1>
+        <div class="menu-subtitle">
+            Сборка товаров для заказов — выберите нужный раздел
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <!-- Карточка 1: Пиво Ульяновск -->
+        <div class="menu-card">
+            <div class="card-badge">Разливной / ПЭТ</div>
+            <div class="card-title">
+                Пиво Ульяновск
+                <small>v2.5</small>
+            </div>
+            <div class="card-desc">
+                Колос, Windmolen, La Moustache, Минское, SnackBar, Zlatogor, Pablo's и другие.
+            </div>
+            <div class="card-meta">
+                <div class="card-tags">
+                    <span class="tag">ст 0,45</span>
+                    <span class="tag">ж-б 0,45</span>
+                    <span class="tag">пэт 0,9</span>
+                </div>
+                <span style="font-size:0.75rem; background: #eef3f8; padding: 0.1rem 0.6rem; border-radius: 30px;">18+</span>
+            </div>
+            <a href="https://danil280793-ctrl.github.io/prometey/pivoulyanovsk/" class="card-link" target="_blank" rel="noopener noreferrer">Открыть конструктор</a>
+        </div>
+
+        <!-- Карточка 2: ОПХ Конструктор -->
+        <div class="menu-card">
+            <div class="card-badge">ОПХ / Комбо</div>
+            <div class="card-title">
+                ОПХ
+                <small>v1.9.11</small>
+            </div>
+            <div class="card-desc">
+                Доктор Дизель, Мистер Лис, Гёссер, Голд, Крушовице, Москвич, Бочкарев, Жигулевское, Охота.
+            </div>
+            <div class="card-meta">
+                <div class="card-tags">
+                    <span class="tag">ст 0,4</span>
+                    <span class="tag">ж-б 0,43</span>
+                    <span class="tag">пэт 1,2</span>
+                </div>
+                <span style="font-size:0.75rem; background: #eef3f8; padding: 0.1rem 0.6rem; border-radius: 30px;">комбо</span>
+            </div>
+            <a href="https://danil280793-ctrl.github.io/prometey/oph/" class="card-link" target="_blank" rel="noopener noreferrer">Открыть конструктор</a>
+        </div>
+
+        <!-- Карточка 3: АБ ИнБев Эфес -->
+        <div class="menu-card">
+            <div class="card-badge">АБ ИнБев</div>
+            <div class="card-title">
+                АБ ИнБев Эфес
+                <small>v3.8</small>
+            </div>
+            <div class="card-desc">
+                Сидр Бон Сезон, Эль Капулько, Эсса, Реддʼс, Аббе, Стелла, Хугарден, Бад, Шпатен, Козел и другие.
+            </div>
+            <div class="card-meta">
+                <div class="card-tags">
+                    <span class="tag">ст</span>
+                    <span class="tag">ж-б</span>
+                    <span class="tag">пэт</span>
+                    <span class="tag">автообъединение</span>
+                </div>
+                <span style="font-size:0.75rem; background: #eef3f8; padding: 0.1rem 0.6rem; border-radius: 30px;">v3.8</span>
+            </div>
+            <a href="https://danil280793-ctrl.github.io/prometey/abinbev/" class="card-link" target="_blank" rel="noopener noreferrer">Открыть конструктор</a>
+        </div>
+
+        <!-- Карточка 4: Балтика -->
+        <div class="menu-card">
+            <div class="card-badge">Балтика</div>
+            <div class="card-title">
+                Балтика
+                <small>v4.0</small>
+            </div>
+            <div class="card-desc">
+                Tony's Garret, Кулер, Жигулевское, Балтика №0/1/3/6/7, Крон, Жатецкий Гусь, Greenbeat и другие.
+            </div>
+            <div class="card-meta">
+                <div class="card-tags">
+                    <span class="tag">ст 0,33</span>
+                    <span class="tag">ж-б 0,45</span>
+                    <span class="tag">пэт 1,5</span>
+                    <span class="tag">Flash Up</span>
+                </div>
+                <span style="font-size:0.75rem; background: #eef3f8; padding: 0.1rem 0.6rem; border-radius: 30px;">v4.4</span>
+            </div>
+            <a href="https://danil280793-ctrl.github.io/prometey/baltika/" class="card-link" target="_blank" rel="noopener noreferrer">Открыть конструктор</a>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        <span>🧾 Все ссылки ведут на действующие конструкторы</span>
+        <span>⚡ Нажмите на карточку, чтобы перейти</span>
+        <span>📦 Поддерживается ст / ж-б / пэт</span>
+    </div>
+</div>
+
+</body>
+</html>
