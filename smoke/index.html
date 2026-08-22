@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Аудит МРЦ и Дат</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Используем более стабильную версию SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -25,6 +26,7 @@
         <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-white hover:border-blue-400 transition-all duration-200 group bg-white/50 mb-8">
             <svg class="w-8 h-8 mb-2 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             <p class="text-sm text-gray-500 group-hover:text-blue-600 font-medium">Выберите Excel файл</p>
+            <p class="text-xs text-gray-400 mt-1">Поддерживаются .xlsx, .xls</p>
             <input id="fileInput" type="file" class="hidden" accept=".xlsx, .xls" />
         </label>
 
@@ -32,24 +34,107 @@
     </div>
 
 <script>
+// Проверяем, загрузилась ли библиотека
+if (typeof XLSX === 'undefined') {
+    document.getElementById('dropZone').innerHTML = 
+        '<div class="text-red-500 text-center">' +
+        '<p class="font-bold">Ошибка загрузки библиотеки</p>' +
+        '<p class="text-sm">Пожалуйста, обновите страницу или проверьте интернет-соединение</p>' +
+        '</div>';
+}
+
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Проверяем расширение файла
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx', 'xls'].includes(fileExtension)) {
+        alert('Пожалуйста, выберите файл Excel (.xlsx или .xls)');
+        return;
+    }
+
     const reader = new FileReader();
+    
     reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // Проверяем, что XLSX загружен
+            if (typeof XLSX === 'undefined') {
+                alert('Библиотека XLSX не загружена. Пожалуйста, обновите страницу.');
+                return;
+            }
+            
+            const workbook = XLSX.read(data, { 
+                type: 'array',
+                cellDates: false,
+                dateNF: 'yyyy-mm-dd'
+            });
+            
+            if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+                alert('Файл не содержит листов. Пожалуйста, проверьте файл.');
+                return;
+            }
+            
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+            
+            if (!worksheet) {
+                alert('Не удалось прочитать лист. Пожалуйста, проверьте файл.');
+                return;
+            }
+            
+            const rows = XLSX.utils.sheet_to_json(worksheet, { 
+                header: 1, 
+                defval: "",
+                blankrows: true
+            });
+            
+            if (!rows || rows.length === 0) {
+                alert('Файл пуст или не содержит данных.');
+                return;
+            }
+            
             processExcelData(rows);
+            
         } catch (error) {
-            console.error('Ошибка при чтении файла:', error);
-            alert('Ошибка при чтении файла. Пожалуйста, проверьте формат файла.');
+            console.error('Детали ошибки:', error);
+            alert('Ошибка при чтении файла: ' + error.message + '\nПожалуйста, проверьте формат файла.');
         }
     };
+    
+    reader.onerror = function() {
+        alert('Ошибка при чтении файла. Пожалуйста, попробуйте снова.');
+    };
+    
     reader.readAsArrayBuffer(file);
+});
+
+// Поддержка Drag & Drop для Firefox
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('border-blue-500', 'bg-blue-50');
+});
+
+dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-500', 'bg-blue-50');
+});
+
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-500', 'bg-blue-50');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        const fileInput = document.getElementById('fileInput');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change'));
+    }
 });
 
 function processExcelData(rows) {
@@ -332,6 +417,7 @@ function renderResults(groupedData) {
         cardsContainer.innerHTML = 
             '<div class="col-span-full text-center py-10">' +
                 '<p class="text-gray-500 font-medium">Данные для обработки не найдены</p>' +
+                '<p class="text-gray-400 text-sm mt-2">Проверьте, что файл содержит данные в правильном формате</p>' +
             '</div>';
     }
 }
