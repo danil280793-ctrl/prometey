@@ -38,11 +38,16 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-        processExcelData(rows);
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+            processExcelData(rows);
+        } catch (error) {
+            console.error('Ошибка при чтении файла:', error);
+            alert('Ошибка при чтении файла. Пожалуйста, проверьте формат файла.');
+        }
     };
     reader.readAsArrayBuffer(file);
 });
@@ -56,51 +61,112 @@ function processExcelData(rows) {
     let colIndexENS = -1;  
 
     for (let i = 0; i < rows.length; i++) {
-        const cols = rows[i].map(c => String(c).trim());
+        const cols = rows[i].map(function(c) { 
+            return String(c).trim(); 
+        });
+        
+        // Проверка на пустую строку
+        let isEmpty = true;
+        for (let j = 0; j < cols.length; j++) {
+            if (cols[j] !== "") {
+                isEmpty = false;
+                break;
+            }
+        }
+        if (isEmpty) continue;
+
         const rowStr = cols.join(' ');
-        if (rowStr.replace(/\s+/g, '') === "") continue;
 
-        if (rowStr.includes("Отчет по приемке")) {
-            currentMRP = null; currentENS = null; isDateRow = false; colIndexDate = -1; colIndexENS = -1;
-            let mrpMatch = rowStr.match(/МРЦ\s*(\d+)\s*р/i);
-            if (mrpMatch) currentMRP = mrpMatch[1];
+        // Поиск строки с "Отчет по приемке"
+        if (rowStr.indexOf("Отчет по приемке") !== -1) {
+            currentMRP = null; 
+            currentENS = null; 
+            isDateRow = false; 
+            colIndexDate = -1; 
+            colIndexENS = -1;
+            
+            // Поиск МРЦ
+            const mrpMatch = rowStr.match(/МРЦ\s*(\d+)\s*р/i);
+            if (mrpMatch && mrpMatch[1]) {
+                currentMRP = mrpMatch[1];
+            }
         }
 
-        if (rowStr.includes("Код ЕНС")) {
-            for(let j=0; j < cols.length; j++) if(cols[j] === "Код ЕНС") colIndexENS = j;
+        // Поиск колонки "Код ЕНС"
+        if (rowStr.indexOf("Код ЕНС") !== -1) {
+            for (let j = 0; j < cols.length; j++) {
+                if (cols[j] === "Код ЕНС") {
+                    colIndexENS = j;
+                    break;
+                }
+            }
         }
 
+        // Проверка на наличие ЕНС
         if (colIndexENS !== -1 && cols[colIndexENS] !== "" && cols[colIndexENS] !== "Код ЕНС") {
-            let potentialENS = cols[colIndexENS];
-            if (potentialENS.includes(',') || /^\d{5}$/.test(potentialENS)) currentENS = potentialENS;
+            const potentialENS = cols[colIndexENS];
+            // Проверка на число или строку с запятой
+            if (potentialENS.indexOf(',') !== -1 || /^\d{5}$/.test(potentialENS)) {
+                currentENS = potentialENS;
+            }
         }
 
-        if (rowStr.includes("Дата изготовления")) {
-            for(let j=0; j < cols.length; j++) if(cols[j].includes("Дата изготовления")) colIndexDate = j;
-            isDateRow = true; continue;
+        // Поиск колонки "Дата изготовления"
+        if (rowStr.indexOf("Дата изготовления") !== -1) {
+            for (let j = 0; j < cols.length; j++) {
+                if (cols[j].indexOf("Дата изготовления") !== -1) {
+                    colIndexDate = j;
+                    break;
+                }
+            }
+            isDateRow = true;
+            continue;
         }
 
+        // Обработка дат
         if (isDateRow && colIndexDate !== -1) {
-            if (rowStr === "") { isDateRow = false; continue; }
+            // Проверка, что строка не пустая
+            let isRowEmpty = true;
+            for (let j = 0; j < cols.length; j++) {
+                if (cols[j] !== "") {
+                    isRowEmpty = false;
+                    break;
+                }
+            }
+            
+            if (isRowEmpty) { 
+                isDateRow = false; 
+                continue; 
+            }
 
             let dateStr = cols[colIndexDate];
             if (dateStr && dateStr !== '') {
-                if (!groupedData[currentENS]) groupedData[currentENS] = { mrp: currentMRP, items: [], hasError: false };
+                // Инициализация группы, если её нет
+                if (!groupedData[currentENS]) {
+                    groupedData[currentENS] = { 
+                        mrp: currentMRP, 
+                        items: [], 
+                        hasError: false 
+                    };
+                }
                 
-                let fakeDateMatch = dateStr.match(/^\d{2}\.\d{2}\.0(\d{3})$/);
+                // Проверка формата даты
+                const fakeDateMatch = dateStr.match(/^(\d{2})\.(\d{2})\.0(\d{3})$/);
                 
                 // ЖЕЛЕЗНАЯ ЛОГИКА ПРОВЕРКИ
                 if (currentMRP) {
                     // Если в шапке ЕСТЬ МРЦ -> Проверка строго обязательна!
                     if (fakeDateMatch) {
                         // Формат верный (01.01.0XXX), проверяем цифры
-                        let isValid = fakeDateMatch[1] === currentMRP;
-                        if (!isValid) groupedData[currentENS].hasError = true;
+                        const isValid = fakeDateMatch[3] === currentMRP;
+                        if (!isValid) {
+                            groupedData[currentENS].hasError = true;
+                        }
                         
                         groupedData[currentENS].items.push({
                             date: dateStr, 
                             statusType: isValid ? 'ok' : 'error',
-                            text: isValid ? 'ОК' : `Ошибка (в дате ${fakeDateMatch[1]}р.)`
+                            text: isValid ? 'ОК' : 'Ошибка (в дате ' + fakeDateMatch[3] + 'р.)'
                         });
                     } else {
                         // Формат НЕверный (например обычная дата 01.01.2026), а МРЦ есть - это ОШИБКА
@@ -108,12 +174,16 @@ function processExcelData(rows) {
                         groupedData[currentENS].items.push({
                             date: dateStr, 
                             statusType: 'error',
-                            text: `Ошибка (ожидался 0${currentMRP})`
+                            text: 'Ошибка (ожидался 0' + currentMRP + ')'
                         });
                     }
                 } else {
                     // Если в шапке НЕТ МРЦ (например Стики) -> Только пропуск
-                    groupedData[currentENS].items.push({ date: dateStr, statusType: 'skip', text: 'Пропуск' });
+                    groupedData[currentENS].items.push({ 
+                        date: dateStr, 
+                        statusType: 'skip', 
+                        text: 'Пропуск' 
+                    });
                 }
             }
         }
@@ -132,13 +202,21 @@ function renderResults(groupedData) {
 
     let totalItems = 0, okCount = 0, errorCount = 0, skipCount = 0;
     
-    let sortedENS = Object.keys(groupedData).sort((a, b) => {
+    // Сортировка ЕНС
+    const ensArray = Object.keys(groupedData);
+    const sortedENS = ensArray.sort(function(a, b) {
         const aData = groupedData[a];
         const bData = groupedData[b];
 
-        const getPriority = (data) => {
+        const getPriority = function(data) {
             if (data.hasError) return 0; // Сначала ошибки
-            const hasOk = data.items.some(i => i.statusType === 'ok');
+            let hasOk = false;
+            for (let i = 0; i < data.items.length; i++) {
+                if (data.items[i].statusType === 'ok') {
+                    hasOk = true;
+                    break;
+                }
+            }
             if (hasOk) return 1; // Потом верные
             return 2; // В конце пропущенные
         };
@@ -151,17 +229,28 @@ function renderResults(groupedData) {
         return 0;
     });
 
-    sortedENS.forEach(ens => {
+    // Отрисовка карточек
+    for (let idx = 0; idx < sortedENS.length; idx++) {
+        const ens = sortedENS[idx];
         const data = groupedData[ens];
         
-        data.items.forEach(item => {
+        // Подсчет статистики
+        for (let i = 0; i < data.items.length; i++) {
+            const item = data.items[i];
             totalItems++;
             if (item.statusType === 'ok') okCount++;
             if (item.statusType === 'error') errorCount++;
             if (item.statusType === 'skip') skipCount++;
-        });
+        }
 
-        const hasOkChecks = data.items.some(i => i.statusType === 'ok');
+        // Проверка наличия OK записей
+        let hasOkChecks = false;
+        for (let i = 0; i < data.items.length; i++) {
+            if (data.items[i].statusType === 'ok') {
+                hasOkChecks = true;
+                break;
+            }
+        }
 
         // ЛОГИКА ЦВЕТОВ КАРТОЧЕК
         let cardStyle = "border-gray-200 bg-gray-50 opacity-60"; 
@@ -179,70 +268,71 @@ function renderResults(groupedData) {
         }
 
         // ЛОГИКА ЦВЕТОВ СТРОК ВНУТРИ
-        let itemsHtml = data.items.map(item => {
+        let itemsHtml = '';
+        for (let i = 0; i < data.items.length; i++) {
+            const item = data.items[i];
             if (item.statusType === 'error') {
-                return `<div class="flex justify-between items-center bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold shadow-sm">
-                            <span class="font-mono">${item.date}</span>
-                            <span>❌ ${item.text}</span>
-                        </div>`;
-            }
-            if (item.statusType === 'ok') {
+                itemsHtml += '<div class="flex justify-between items-center bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold shadow-sm">' +
+                            '<span class="font-mono">' + item.date + '</span>' +
+                            '<span>❌ ' + item.text + '</span>' +
+                            '</div>';
+            } else if (item.statusType === 'ok') {
                 let rowBg = data.hasError ? "bg-gray-50 text-gray-500" : "bg-white text-gray-700";
-                return `<div class="flex justify-between items-center ${rowBg} px-2 py-1 rounded text-xs">
-                            <span class="font-mono">${item.date}</span>
-                            <span class="text-green-600 font-semibold">✅ ${item.text}</span>
-                        </div>`;
+                itemsHtml += '<div class="flex justify-between items-center ' + rowBg + ' px-2 py-1 rounded text-xs">' +
+                            '<span class="font-mono">' + item.date + '</span>' +
+                            '<span class="text-green-600 font-semibold">✅ ' + item.text + '</span>' +
+                            '</div>';
+            } else {
+                itemsHtml += '<div class="flex justify-between items-center text-gray-300 pl-2 py-0.5 text-xs">' +
+                            '<span class="font-mono">' + item.date + '</span>' +
+                            '<span>' + item.text + '</span>' +
+                            '</div>';
             }
-            return `<div class="flex justify-between items-center text-gray-300 pl-2 py-0.5 text-xs">
-                        <span class="font-mono">${item.date}</span>
-                        <span>${item.text}</span>
-                    </div>`;
-        }).join('');
+        }
 
-        cardsContainer.innerHTML += `
-            <div class="rounded-xl border-2 ${cardStyle} p-4 shadow-sm hover:shadow-md transition-all flex flex-col">
-                <div class="flex justify-between items-start mb-3 pb-2 border-b border-slate-200/50">
-                    <div>
-                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Код ЕНС</p>
-                        <p class="text-lg font-bold ${ensTextColor} mt-0.5">${ens}</p>
-                    </div>
-                    <div class="${badgeStyle} text-xs font-bold px-2.5 py-1 rounded-lg">
-                        ${data.mrp ? data.mrp + 'р.' : '—'}
-                    </div>
-                </div>
-                <div class="flex-1 space-y-1 overflow-y-auto max-h-48 hide-scrollbar">
-                    ${itemsHtml}
-                </div>
-            </div>
-        `;
-    });
+        cardsContainer.innerHTML += 
+            '<div class="rounded-xl border-2 ' + cardStyle + ' p-4 shadow-sm hover:shadow-md transition-all flex flex-col">' +
+                '<div class="flex justify-between items-start mb-3 pb-2 border-b border-slate-200/50">' +
+                    '<div>' +
+                        '<p class="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Код ЕНС</p>' +
+                        '<p class="text-lg font-bold ' + ensTextColor + ' mt-0.5">' + ens + '</p>' +
+                    '</div>' +
+                    '<div class="' + badgeStyle + ' text-xs font-bold px-2.5 py-1 rounded-lg">' +
+                        (data.mrp ? data.mrp + 'р.' : '—') +
+                    '</div>' +
+                '</div>' +
+                '<div class="flex-1 space-y-1 overflow-y-auto max-h-48 hide-scrollbar">' +
+                    itemsHtml +
+                '</div>' +
+            '</div>';
+    }
 
+    // Обновление статистики
     if (totalItems > 0) {
         statsContainer.classList.remove('hidden');
-        statsContainer.innerHTML = `
-            <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                <p class="text-3xl font-bold text-gray-800">${Object.keys(groupedData).length}</p>
-                <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">Всего ЕНС</p>
-            </div>
-            <div class="bg-red-50 rounded-xl p-4 border border-red-200 shadow-sm ${errorCount > 0 ? 'ring-2 ring-red-300' : 'opacity-50'}">
-                <p class="text-3xl font-bold text-red-600">${errorCount}</p>
-                <p class="text-xs text-red-500 uppercase tracking-wider mt-1">❌ Неверно</p>
-            </div>
-            <div class="bg-green-50 rounded-xl p-4 border border-green-200 shadow-sm">
-                <p class="text-3xl font-bold text-green-600">${okCount}</p>
-                <p class="text-xs text-green-500 uppercase tracking-wider mt-1">✅ Верных</p>
-            </div>
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm opacity-70">
-                <p class="text-3xl font-bold text-gray-500">${skipCount}</p>
-                <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">⏭️ Пропущено</p>
-            </div>
-        `;
+        statsContainer.innerHTML = 
+            '<div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">' +
+                '<p class="text-3xl font-bold text-gray-800">' + Object.keys(groupedData).length + '</p>' +
+                '<p class="text-xs text-gray-500 uppercase tracking-wider mt-1">Всего ЕНС</p>' +
+            '</div>' +
+            '<div class="bg-red-50 rounded-xl p-4 border border-red-200 shadow-sm ' + (errorCount > 0 ? 'ring-2 ring-red-300' : 'opacity-50') + '">' +
+                '<p class="text-3xl font-bold text-red-600">' + errorCount + '</p>' +
+                '<p class="text-xs text-red-500 uppercase tracking-wider mt-1">❌ Неверно</p>' +
+            '</div>' +
+            '<div class="bg-green-50 rounded-xl p-4 border border-green-200 shadow-sm">' +
+                '<p class="text-3xl font-bold text-green-600">' + okCount + '</p>' +
+                '<p class="text-xs text-green-500 uppercase tracking-wider mt-1">✅ Верных</p>' +
+            '</div>' +
+            '<div class="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm opacity-70">' +
+                '<p class="text-3xl font-bold text-gray-500">' + skipCount + '</p>' +
+                '<p class="text-xs text-gray-400 uppercase tracking-wider mt-1">⏭️ Пропущено</p>' +
+            '</div>';
     } else {
-         dropZone.classList.remove('hidden');
-         cardsContainer.innerHTML = `
-            <div class="col-span-full text-center py-10">
-                <p class="text-gray-500 font-medium">Данные для обработки не найдены</p>
-            </div>`;
+        dropZone.classList.remove('hidden');
+        cardsContainer.innerHTML = 
+            '<div class="col-span-full text-center py-10">' +
+                '<p class="text-gray-500 font-medium">Данные для обработки не найдены</p>' +
+            '</div>';
     }
 }
 </script>
