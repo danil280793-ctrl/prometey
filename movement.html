@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор заявок из Excel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+        h2,
+        h3 {
+            color: #34495e;
+            margin: 25px 0 15px 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        /* ---------- Загрузка файлов ---------- */
+        .file-upload {
+            border: 3px dashed #3498db;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            margin-bottom: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+        .file-upload:hover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+        }
+        .file-upload.dragover {
+            background: #d1ecf1;
+            border-color: #1abc9c;
+        }
+        .file-upload input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-text {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            pointer-events: none;
+        }
+        .upload-hint {
+            color: #7f8c8d;
+            font-size: 0.95em;
+            pointer-events: none;
+        }
+
+        .template-link {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .template-link a {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        .template-link a:hover {
+            color: #c0392b;
+            text-decoration: underline;
+        }
+
+        .processing {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #f39c12;
+            font-weight: 600;
+            display: none;
+        }
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* ---------- Статистика ---------- */
+        .stats {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            border-left: 5px solid #3498db;
+        }
+        .stats-item {
+            padding: 8px 0;
+        }
+        .stats-item strong {
+            color: #2c3e50;
+        }
+
+        /* ---------- Результаты ---------- */
+        .result-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .result-item:hover {
+            background: #e9ecef;
+            border-color: #3498db;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .button-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-right: 5px;
+        }
+        .copy-btn,
+        .copy-btn-small {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+        .copy-btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        .copy-btn:hover,
+        .copy-btn-small:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .buttons-row {
+            display: flex;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+        .total-summary {
+            background: #2ecc71;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* ---------- Исключённые маршруты ---------- */
+        .low-tonnage-item {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .skipped-section {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .skipped-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 0.9em;
+        }
+        .skipped-table th {
+            background: #e74c3c;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+        }
+        .skipped-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            word-break: break-word;
+        }
+
+        /* ---------- Печать ---------- */
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .print-table td {
+            border: 2px solid #34495e;
+            padding: 15px;
+            font-size: 1.1em;
+            word-break: break-word;
+        }
+        .print-table tr:first-child {
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+        }
+        .print-only {
+            display: none;
+        }
+        .print-summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            border: 2px solid #34495e;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 10px;
+            }
+            #printSection,
+            #printSection * {
+                font-size: 10px !important;
+            }
+            .print-summary {
+                font-size: 22px !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .result-item,
+            .buttons-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .button-group {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        /* ---------- Блок настройки строк ---------- */
+        .report-header-section {
+            background: #e8f4fd;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .report-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .report-row:last-child {
+            margin-bottom: 0;
+        }
+        .report-label {
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 140px;
+            font-size: 0.95em;
+        }
+        .report-select {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 12px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        .report-select:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* ---------- Строка 2 ---------- */
+        .report-line2-wrapper {
+            display: flex;
+            flex: 1;
+            gap: 10px;
+            align-items: center;
+            min-width: 250px;
+            flex-wrap: wrap;
+        }
+        .report-line2-select {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        .report-line2-select:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95em;
+            white-space: nowrap;
+            padding: 8px 12px;
+            background: #e8f4fd;
+            border-radius: 6px;
+            border: 2px solid #3498db;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .checkbox-label:hover {
+            background: #d1ecf1;
+        }
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #3498db;
+        }
+
+        /* ---------- Поля XX ---------- */
+        .xx-fields-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 0 10px 155px;
+            margin-bottom: 10px;
+        }
+        .xx-field-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f8ff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #b8d4e8;
+        }
+        .xx-field-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .xx-field-group input {
+            width: 60px;
+            padding: 5px 8px;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            font-size: 0.95em;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .xx-field-group input:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        .xx-field-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .xx-field-group input[type="number"]::-webkit-outer-spin-button,
+        .xx-field-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .xx-field-group select {
+            padding: 5px 8px;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .xx-field-group select:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .xx-fields-container {
+                padding-left: 0;
+                justify-content: center;
+            }
+            .report-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .report-label {
+                min-width: auto;
+            }
+            .report-select {
+                min-width: auto;
+                width: 100%;
+            }
+            .report-line2-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+                min-width: auto;
+                width: 100%;
+            }
+            .checkbox-label {
+                justify-content: center;
+            }
+        }
+
+        /* ---------- Превью ---------- */
+        .preview-section {
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .preview-title {
+            font-weight: 700;
+            color: #28a745;
+            font-size: 1.05em;
+        }
+        .preview-content {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.95em;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0;
+        }
+
+        /* ---------- Примечания ---------- */
+        .notes-section {
+            background: #fff9e6;
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+        .notes-section:focus-within {
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+            transform: translateY(-2px);
+        }
+        .notes-label {
+            display: block;
+            font-weight: 700;
+            color: #e67e22;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .notes-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px 15px;
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1em;
+            line-height: 1.5;
+            resize: vertical;
+            background: white;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        .notes-textarea:focus {
+            border-color: #e67e22;
+            box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
+        }
+        .notes-textarea::placeholder {
+            color: #bdc3c7;
+            font-style: italic;
+        }
+
+        /* ---------- План ---------- */
+        .plan-section {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .plan-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .plan-label {
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 140px;
+            font-size: 0.95em;
+        }
+        .plan-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 2px solid #4caf50;
+        }
+        .plan-input-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+        .plan-input-group input {
+            width: 60px;
+            padding: 5px 8px;
+            border: 2px solid #4caf50;
+            border-radius: 4px;
+            font-size: 0.95em;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .plan-input-group input:focus {
+            border-color: #2e7d32;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        .plan-input-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .plan-input-group input[type="number"]::-webkit-outer-spin-button,
+        .plan-input-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .plan-result {
+            font-weight: 700;
+            color: #2e7d32;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            background: #c8e6c9;
+            border-radius: 6px;
+            border: 2px solid #4caf50;
+        }
+
+        @media (max-width: 768px) {
+            .plan-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .plan-input-group {
+                justify-content: center;
+            }
+        }
+
+        /* ---------- Печать ---------- */
+        .print-notes {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff9e6;
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            page-break-inside: avoid;
+        }
+        .print-notes-label {
+            font-weight: bold;
+            color: #e67e22;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .print-notes-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .print-plan {
+            margin-top: 20px;
+            padding: 15px 20px;
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            page-break-inside: avoid;
+        }
+        .print-plan-label {
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 16px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .print-plan-content {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1b5e20;
+        }
+
+        @media (max-width: 768px) {
+            .notes-section {
+                padding: 15px;
+            }
+            .notes-textarea {
+                min-height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <h1 class="no-print">📊 Конструктор заявок из Excel</h1>
+
+        <!-- ЗАГРУЗКА ФАЙЛА -->
+        <div class="file-upload no-print" id="fileUpload">
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <div class="upload-text">📁 Нажмите или перетащите Excel файл</div>
+            <div class="upload-hint">Поддерживаются файлы .xlsx, .xls</div>
+        </div>
+
+        <div class="template-link no-print">
+            <a id="downloadTemplate">📥 Скачать шаблон Excel</a>
+        </div>
+
+        <div class="processing no-print" id="processing">⏳ Обрабатываем файл...</div>
+        <div class="error-message no-print" id="errorMessage"></div>
+
+        <!-- ============================================================ -->
+        <!-- 1. СГЕНЕРИРОВАННЫЕ ЗАЯВКИ (появляются после загрузки) -->
+        <!-- ============================================================ -->
+        <div id="resultsSection" class="no-print" style="display: none;">
+            <h2>Сгенерированные заявки:</h2>
+            <div id="resultsList"></div>
+
+            <div class="total-summary">
+                <div class="simple-total" id="simpleTotal"></div>
+                <div class="button-group">
+                    <button class="copy-btn-small" id="copyTotalBtn">📋 Копировать</button>
+                </div>
+            </div>
+
+            <div class="stats" id="stats" style="display: none;">
+                <div class="stats-item"><strong>Всего строк в файле:</strong> <span id="rowsCount">0</span></div>
+                <div class="stats-item"><strong>Успешных маршрутов:</strong> <span id="routesCount">0</span></div>
+                <div class="stats-item"><strong>Исключено (тоннаж &lt; 500кг):</strong> <span id="lowTonnageCount">0</span></div>
+                <div class="stats-item"><strong>Пропущено (ошибки):</strong> <span id="skippedCount">0</span></div>
+                <div class="stats-item"><strong>Всего машин (по МЛ):</strong> <span id="trucksCount">0</span></div>
+                <div class="stats-item"><strong>Алкоголь:</strong> <span id="alcoTonsStat">0</span> тонн</div>
+                <div class="stats-item"><strong>Продукты:</strong> <span id="prodTonsStat">0</span> тонн</div>
+            </div>
+
+            <div class="buttons-row">
+                <button class="copy-btn" id="copyAllWithMLBtn">📋 Скопировать все (с МЛ)</button>
+                <button class="copy-btn" id="copyAllWithoutMLBtn">📋 Скопировать все (без МЛ)</button>
+            </div>
+
+            <div id="lowTonnageSection" style="display: none; margin-top: 30px;">
+                <h3>Маршруты с тоннажом менее 500кг (исключены из отчета):</h3>
+                <div id="lowTonnageList"></div>
+            </div>
+
+            <div id="skippedSection" class="skipped-section" style="display: none;">
+                <h3>Строки не попавшие в расчет (ошибки):</h3>
+                <button class="copy-btn" id="copySkippedBtn">📋 Копировать ошибки для исправления</button>
+                <div id="skippedTable"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 2. БЛОК НАСТРОЙКИ СТРОК -->
+        <!-- ============================================================ -->
+        <div class="report-header-section no-print">
+            <div class="report-row">
+                <label for="reportLine1" class="report-label">📌 Строка 1:</label>
+                <select id="reportLine1" class="report-select">
+                    <option value="Доброе утро. К 8.00 всё загружено.">Доброе утро. К 8.00 всё загружено.</option>
+                    <option value="Доброе утро. На 8.00 остаётся {XX} машин (кросс-док межгород)">Доброе утро. На 8.00 остаётся {XX} машин (кросс-док межгород)</option>
+                    <option value="Доброе утро. На 8.00 остаётся {XX} машин (паллетный вывоз межгород)">Доброе утро. На 8.00 остаётся {XX} машин (паллетный вывоз межгород)</option>
+                    <option value="Доброе утро. На 8.00 остаётся {XX} машин (наши межгород)">Доброе утро. На 8.00 остаётся {XX} машин (наши межгород)</option>
+                    <option value="Доброе утро. На 8.00 остаётся {YY} машин ({XX} машин кросс-док межгород, {ZZ} машины наши {QQ})">Доброе утро. На 8.00 остаётся {YY} машин ({XX} машин кросс-док межгород, {ZZ} машины наши {QQ})</option>
+                </select>
+            </div>
+
+            <div id="xxFieldsContainer" class="xx-fields-container"></div>
+
+            <div class="report-row">
+                <label for="reportLine2" class="report-label">📌 Строка 2 (опционально):</label>
+                <div class="report-line2-wrapper">
+                    <select id="reportLine2Select" class="report-line2-select">
+                        <option value="Контейнер Газ. Милкис 250мл.">Контейнер Газ. Милкис 250мл.</option>
+                        <option value="Контейнер Ананасы/Персики/Клубника/Черешня 580мл.">Контейнер Ананасы/Персики/Клубника/Черешня 580мл.</option>
+                    </select>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reportLine2Checkbox">
+                        <span>Вставить</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 3. ПРЕВЬЮ СООБЩЕНИЯ -->
+        <!-- ============================================================ -->
+        <div class="preview-section no-print">
+            <div class="preview-header">
+                <span class="preview-title">📄 Превью сообщения:</span>
+                <button class="copy-btn-small" id="copyPreviewBtn">📋 Копировать</button>
+            </div>
+            <pre id="previewContent" class="preview-content">Доброе утро. К 8.00 всё загружено.</pre>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 4. ПРИМЕЧАНИЯ -->
+        <!-- ============================================================ -->
+        <div class="notes-section no-print">
+            <label for="userNotes" class="notes-label">📝 Примечания:</label>
+            <textarea id="userNotes" class="notes-textarea" placeholder="Введите ваши примечания здесь..." rows="3"></textarea>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 5. ПЛАН -->
+        <!-- ============================================================ -->
+        <div class="plan-section no-print">
+            <div class="plan-row">
+                <span class="plan-label">📊 План:</span>
+                <div class="plan-input-group">
+                    <label>1:</label>
+                    <input type="number" min="0" value="0" id="plan1" class="plan-input">
+                </div>
+                <div class="plan-input-group">
+                    <label>2:</label>
+                    <input type="number" min="0" value="0" id="plan2" class="plan-input">
+                </div>
+                <div class="plan-input-group">
+                    <label>3:</label>
+                    <input type="number" min="0" value="0" id="plan3" class="plan-input">
+                </div>
+                <span class="plan-result" id="planTotal">Итого: 0</span>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 6. КНОПКА КОПИРОВАНИЯ СООБЩЕНИЯ -->
+        <!-- ============================================================ -->
+        <div class="buttons-row no-print">
+            <button class="copy-btn" id="copyReportBtn">📋 Скопировать сообщение</button>
+            <button class="copy-btn" id="showPrintTableBtn" style="display:none;">📊 Показать таблицу для печати</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- ПЕЧАТЬ -->
+        <!-- ============================================================ -->
+        <div id="printSection" class="print-only">
+            <div id="printTable"></div>
+            <div id="printNotes" class="print-notes"></div>
+            <div id="printPlan" class="print-plan"></div>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    </script>
+    <script>
+        // ============================================================
+        // 1. СПРАВОЧНИКИ
+        // ============================================================
+        const cityAssociations = {
+            'Санкт-Петербург': { code: 'СПБ', org: ['Оазис'] },
+            'Волгоград': { code: 'ВЛГ', org: ['Оазис'] },
+            'Краснодар': { code: 'КДР', org: ['Оазис'] },
+            'Краснодар3': { code: 'КДР3', org: ['Оазис'] },
+            'Воронеж': { code: 'ВРН', org: ['Оазис'] },
+            'Уфа': { code: 'Уфа', org: ['Оазис'] },
+            'Новосибирск': { code: 'НСК', org: ['Оазис'] },
+            'Челябинск': { code: 'ЧЛБ', org: ['Абсолют', 'Оазис'] },
+            'Омск': { code: 'Омск', org: ['Оазис'] },
+            'Оренбург': { code: 'ОРН', org: ['Прометей'] },
+            'Самара': { code: 'СМР', org: ['Прометей'] },
+            'Казань': { code: 'КЗН', org: ['Прометей'] },
+            'Тула': { code: 'Тула', org: ['Прометей'] },
+            'Ярославль': { code: 'ЯРС', org: ['Прометей'] },
+            'Подольск': { code: 'МСК', org: ['Прометей'] },
+            'Екатеринбург': { code: 'ЕКБ', org: ['Абсолют', 'Оазис'] }
+        };
+
+        // ============================================================
+        // 2. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        // ============================================================
+        let currentResults = [];
+        let lowTonnageRoutes = [];
+        let skippedRows = [];
+        let orgTotals = {};
+
+        // ============================================================
+        // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        // ============================================================
+        function escapeHtml(text) {
+            if (typeof text !== 'string') text = String(text);
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function declensionTons(num) {
+            const l = num % 10,
+                l2 = num % 100;
+            if (l2 >= 11 && l2 <= 19) return 'тонн';
+            if (l === 1) return 'тонна';
+            if (l >= 2 && l <= 4) return 'тонны';
+            return 'тонн';
+        }
+
+        function declensionTrucks(num) {
+            const l = num % 10,
+                l2 = num % 100;
+            if (l2 >= 11 && l2 <= 19) return num + ' машин';
+            if (l === 1) return num + ' машина';
+            if (l >= 2 && l <= 4) return num + ' машины';
+            return num + ' машин';
+        }
+
+        function roundRouteMass(massKg) {
+            const tons = massKg / 1000;
+            const remainder = massKg % 1000;
+            if (remainder < 500) return Math.floor(tons);
+            return Math.ceil(tons);
+        }
+
+        // ============================================================
+        // 4. ИЗВЛЕЧЕНИЕ ОРГАНИЗАЦИИ И ГОРОДА
+        // ============================================================
+        function extractOrgAndCity(clientString) {
+            const client = clientString.trim();
+            const orgs = ['Оазис', 'Прометей', 'Абсолют'];
+            const cities = Object.keys(cityAssociations).sort((a, b) => b.length - a.length);
+            let org = null,
+                city = null;
+
+            for (const o of orgs) {
+                if (client.startsWith(o)) { org = o; break; }
+            }
+            if (!org) {
+                return { error: 'Организация не найдена в строке: "' + client + '". Ожидается одна из: ' + orgs.join(', ') };
+            }
+
+            for (const c of cities) {
+                if (client.includes(c)) { city = c; break; }
+            }
+            if (!city && org === 'Абсолют') city = 'Челябинск';
+            if (!city) {
+                return { error: 'Город не найден в строке: "' + client + '". Доступные города: ' + Object.keys(cityAssociations)
+                        .join(', ') };
+            }
+            if (!cityAssociations[city].org.includes(org)) {
+                return { error: 'Неверная организация для ' + city + ': ожидается "' + cityAssociations[city].org.join(' или ') +
+                        '", найдено "' + org + '"' };
+            }
+            return { org: org, city: city, code: cityAssociations[city].code };
+        }
+
+        // ============================================================
+        // 5. КОПИРОВАНИЕ В БУФЕР
+        // ============================================================
+        async function copyToClipboard(text, element, successText) {
+            const btn = element.tagName === 'BUTTON' ? element : element.closest('button');
+            const orig = btn.textContent;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-999999px';
+                    document.body.appendChild(ta);
+                    ta.focus();
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                btn.textContent = successText;
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+            } catch (e) {
+                console.error(e);
+                btn.textContent = '❌ Ошибка';
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+                showError('Не удалось скопировать.');
+            }
+        }
+
+        // ============================================================
+        // 6. ОСНОВНАЯ ОБРАБОТКА ДАННЫХ
+        // ============================================================
+        function processData(jsonData) {
+            try {
+                if (!jsonData || jsonData.length === 0) {
+                    showError('Файл пуст или содержит некорректные данные');
+                    return;
+                }
+
+                const rows = [];
+                orgTotals = {};
+
+                for (let i = 1; i < jsonData.length; i++) {
+                    const rw = jsonData[i];
+                    const num = rw[5] ? String(rw[5]).trim() : '';
+                    const client = rw[7] ? String(rw[7]).trim() : '';
+                    const massRaw = rw[16];
+                    const ml = rw[20] ? String(rw[20]).trim() : '';
+
+                    if (!num || !client || massRaw === undefined || massRaw === null || massRaw === '') {
+                        if (num || client) {
+                            skippedRows.push({
+                                number: num || 'Пусто',
+                                client: client || 'Пусто',
+                                mass: massRaw === undefined ? 'Пусто' : massRaw,
+                                ml: ml || '',
+                                reason: 'Не заполнены обязательные поля'
+                            });
+                        }
+                        continue;
+                    }
+
+                    const mass = parseFloat(massRaw) || 0;
+                    if (mass <= 0) {
+                        skippedRows.push({
+                            number: num,
+                            client: client,
+                            mass: mass,
+                            ml: ml,
+                            reason: mass === 0 ? 'Масса равна нулю' : 'Отрицательная масса'
+                        });
+                        continue;
+                    }
+
+                    const ext = extractOrgAndCity(client);
+                    if (ext.error) {
+                        skippedRows.push({
+                            number: num,
+                            client: client,
+                            mass: mass,
+                            ml: ml,
+                            reason: ext.error
+                        });
+                        continue;
+                    }
+
+                    if (!orgTotals[ext.org]) {
+                        orgTotals[ext.org] = { alcoMassKg: 0, prodMassKg: 0 };
+                    }
+
+                    if (num.startsWith('РЛА') || num.startsWith('РЛК')) {
+                        orgTotals[ext.org].alcoMassKg += mass;
+                    } else {
+                        orgTotals[ext.org].prodMassKg += mass;
+                    }
+
+                    rows.push({ number: num, client: client, mass: mass, ml: ml, org: ext.org });
+                }
+
+                // Группировка
+                const groups = {};
+                rows.forEach(r => {
+                    const ext = extractOrgAndCity(r.client);
+                    if (ext.error) return;
+                    const key = ext.org + '|' + ext.code;
+                    if (!groups[key]) {
+                        groups[key] = {
+                            org: ext.org,
+                            city: ext.code,
+                            pallets: 0,
+                            mass: 0,
+                            mlNumbers: new Set(),
+                            alcoMass: 0,
+                            prodMass: 0
+                        };
+                    }
+                    groups[key].pallets++;
+                    groups[key].mass += r.mass;
+                    if (r.ml) groups[key].mlNumbers.add(r.ml);
+                    if (r.number.startsWith('РЛА') || r.number.startsWith('РЛК')) {
+                        groups[key].alcoMass += r.mass;
+                    } else {
+                        groups[key].prodMass += r.mass;
+                    }
+                });
+
+                currentResults = [];
+                lowTonnageRoutes = [];
+                let totalRoutes = 0;
+                let totalTrucks = 0;
+                let totalAlcoT = 0;
+                let totalProdT = 0;
+
+                Object.values(groups).forEach(g => {
+                    const massKg = g.mass;
+                    const roundedTons = roundRouteMass(massKg);
+
+                    if (roundedTons === 0) {
+                        const trucks = Math.max(1, g.mlNumbers.size);
+                        lowTonnageRoutes.push({
+                            text: 'Перемещение на ' + g.city + ' ' + g.org + ' ' + declensionTrucks(trucks) + ' ' +
+                                g.pallets + 'п/' + (massKg / 1000).toFixed(2).replace('.', ',') +
+                                'т. В отчет не указываем, так как меньше тонны.'
+                        });
+                        return;
+                    }
+
+                    totalRoutes++;
+                    const trucks = Math.max(1, g.mlNumbers.size);
+                    totalTrucks += trucks;
+                    const mlList = Array.from(g.mlNumbers).filter(m => m).join(', ');
+                    const base = 'Перемещение на ' + g.city + ' ' + g.org + ' ' + declensionTrucks(trucks) + ' ' + g.pallets +
+                        'п/' + roundedTons + 'т';
+
+                    if (g.alcoMass > 0 && g.prodMass === 0) {
+                        totalAlcoT += roundedTons;
+                    } else if (g.prodMass > 0 && g.alcoMass === 0) {
+                        totalProdT += roundedTons;
+                    } else {
+                        const totalMass = g.alcoMass + g.prodMass;
+                        if (totalMass > 0) {
+                            const alcoRatio = g.alcoMass / totalMass;
+                            const alcoTons = Math.round(roundedTons * alcoRatio);
+                            totalAlcoT += alcoTons;
+                            totalProdT += roundedTons - alcoTons;
+                        } else {
+                            totalProdT += roundedTons;
+                        }
+                    }
+
+                    currentResults.push({
+                        text: base,
+                        textWithML: mlList ? base + ' МЛ: ' + mlList : base,
+                        ml: mlList || '',
+                        tons: roundedTons
+                    });
+                });
+
+                displayResults(currentResults, totalAlcoT, totalProdT, totalRoutes, skippedRows.length, lowTonnageRoutes
+                    .length, totalTrucks);
+
+            } catch (err) {
+                showError('Ошибка обработки: ' + err.message);
+            } finally {
+                document.getElementById('processing').style.display = 'none';
+            }
+        }
+
+        // ============================================================
+        // 7. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ
+        // ============================================================
+        function displayResults(results, totalAlcoT, totalProdT, routesCount, skippedCount, lowTonnageCount, trucksCount) {
+            const list = document.getElementById('resultsList');
+            list.innerHTML = '';
+
+            results.forEach((r, i) => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = '<span>' + escapeHtml(r.textWithML) + '</span>' +
+                    '<div class="button-group">' +
+                    '<span class="button-label">Копировать:</span>' +
+                    '<button class="copy-btn-small" data-index="' + i + '" data-ml="true">📋 с МЛ</button>' +
+                    '<button class="copy-btn-small" data-index="' + i + '" data-ml="false">📋 без МЛ</button>' +
+                    '</div>';
+                list.appendChild(div);
+            });
+
+            document.querySelectorAll('.copy-btn-small[data-index]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    const withML = this.getAttribute('data-ml') === 'true';
+                    copyResult(this, index, withML);
+                });
+            });
+
+            document.getElementById('rowsCount').textContent = results.length + skippedCount + lowTonnageCount;
+            document.getElementById('routesCount').textContent = routesCount + ' (' + (routesCount + lowTonnageCount) +
+                ' всего)';
+            document.getElementById('skippedCount').textContent = skippedCount;
+            document.getElementById('lowTonnageCount').textContent = lowTonnageCount;
+            document.getElementById('trucksCount').textContent = trucksCount;
+
+            const totalT = totalAlcoT + totalProdT;
+            const tonsWord = declensionTons(totalT);
+            const html = 'Итого: ' + totalT + ' ' + tonsWord + '. ' + totalProdT + 'т прод, ' + totalAlcoT + 'т алко';
+            document.getElementById('simpleTotal').innerHTML = html;
+            document.getElementById('alcoTonsStat').textContent = totalAlcoT;
+            document.getElementById('prodTonsStat').textContent = totalProdT;
+
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('showPrintTableBtn').style.display = 'inline-block';
+
+            updatePreview();
+
+            if (skippedRows.length) displaySkippedRows();
+            if (lowTonnageRoutes.length) displayLowTonnageRoutes();
+        }
+
+        // ============================================================
+        // 8. ПЕЧАТЬ
+        // ============================================================
+        function showPrintTable() {
+            if (!currentResults.length) {
+                showError('Нет данных для печати');
+                return;
+            }
+
+            const totalAlcoT = parseInt(document.getElementById('alcoTonsStat').textContent) || 0;
+            const totalProdT = parseInt(document.getElementById('prodTonsStat').textContent) || 0;
+
+            let html = '<table class="print-table"><tr><td>№</td><td>Направление</td><td>Номер МЛ</td></tr>';
+            currentResults.forEach((r, i) => {
+                html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(r.text) + '</td><td>' + escapeHtml(r.ml || '-') +
+                    '</td></tr>';
+            });
+            html += '</table>';
+            const totalT = totalAlcoT + totalProdT;
+            const tonsWord = declensionTons(totalT);
+            html += '<div class="print-summary">Итого: ' + totalT + ' ' + tonsWord + '. ' + totalProdT + 'т прод, ' +
+                totalAlcoT + 'т алко</div>';
+
+            document.getElementById('printTable').innerHTML = html;
+
+            // Примечания
+            const userNotes = document.getElementById('userNotes').value.trim();
+            document.getElementById('printNotes').innerHTML = userNotes ?
+                '<span class="print-notes-label">📝 Примечания:</span><div class="print-notes-content">' + escapeHtml(
+                    userNotes) + '</div>' :
+                '';
+
+            // План
+            const plan1 = parseInt(document.getElementById('plan1').value) || 0;
+            const plan2 = parseInt(document.getElementById('plan2').value) || 0;
+            const plan3 = parseInt(document.getElementById('plan3').value) || 0;
+            const planSum = plan1 + plan2 + plan3;
+            const totalWithPlan = planSum + totalT;
+            const totalWords = declensionTons(totalWithPlan);
+
+            document.getElementById('printPlan').innerHTML =
+                '<span class="print-plan-label">📊 План:</span>' +
+                '<div class="print-plan-content">' + plan1 + '/' + plan2 + '/' + plan3 + '</div>' +
+                '<div class="print-plan-content" style="margin-top:5px; font-size:18px; color:#1b5e20;">Итого: ' +
+                totalWithPlan + ' ' + totalWords + '</div>';
+
+            document.getElementById('printSection').style.display = 'block';
+            window.print();
+        }
+
+        // ============================================================
+        // 9. КОПИРОВАНИЕ
+        // ============================================================
+        function copyResult(btn, idx, withML) {
+            if (!currentResults[idx]) return;
+            copyToClipboard(withML ? currentResults[idx].textWithML : currentResults[idx].text, btn, '✅ Скопировано!');
+        }
+
+        function copyAllResults(btn, withML) {
+            if (!currentResults.length) return;
+            const allText = currentResults.map(r => withML ? r.textWithML : r.text).join('\n');
+            copyToClipboard(allText, btn, '✅ Все скопировано!');
+        }
+
+        function copySkippedRows(btn) {
+            if (!skippedRows.length) return;
+            const head = ['Номер', 'Клиент куда', 'Масса', 'Номер МЛ', 'Причина ошибки'];
+            const body = skippedRows.map(r => [r.number, r.client, r.mass, r.ml || '', r.reason].join('\t'));
+            copyToClipboard([head.join('\t')].concat(body).join('\n'), btn, '✅ Ошибки скопированы!');
+        }
+
+        function copyTotal(btn) {
+            const totalText = document.getElementById('simpleTotal').textContent;
+            if (!totalText.includes('тонн')) {
+                showError('Итоговая строка пуста');
+                return;
+            }
+            copyToClipboard(totalText, btn, '✅ Скопировано!');
+        }
+
+        function copyPreview(btn) {
+            const text = getReportText();
+            copyToClipboard(text, btn, '✅ Скопировано!');
+        }
+
+        function copyReport(btn) {
+            const text = getReportText();
+            copyToClipboard(text, btn, '✅ Сообщение скопировано!');
+        }
+
+        // ============================================================
+        // 10. ПОЛУЧЕНИЕ ТЕКСТА ОТЧЁТА (порядок: Доброе утро → Строка 2 → Перемещения → Итого)
+        // ============================================================
+        function getLine1WithValues() {
+            const select = document.getElementById('reportLine1');
+            let template = select.value;
+
+            const inputs = document.querySelectorAll('.xx-field-group input, .xx-field-group select');
+            const values = {};
+            inputs.forEach(input => {
+                values[input.dataset.placeholder] = input.value || '0';
+            });
+
+            if (template.includes('{YY}')) {
+                const xx = parseInt(values['XX']) || 0;
+                const zz = parseInt(values['ZZ']) || 0;
+                const yy = xx + zz;
+                const qq = values['QQ'] || 'город';
+                template = template.replace('{YY}', yy).replace('{XX}', xx).replace('{ZZ}', zz).replace('{QQ}', qq);
+            } else {
+                const matches = template.match(/\{XX\d?\}/g) || [];
+                matches.forEach(match => {
+                    const key = match.replace('{', '').replace('}', '');
+                    if (values[key]) {
+                        template = template.replace(match, values[key]);
+                    }
+                });
+            }
+            return template;
+        }
+
+        function getReportText() {
+            const lines = [];
+
+            // 1. Доброе утро (строка 1)
+            const line1 = getLine1WithValues();
+            if (line1) lines.push(line1);
+
+            // 2. Строка 2 (если включена)
+            if (document.getElementById('reportLine2Checkbox').checked) {
+                const line2 = document.getElementById('reportLine2Select').value;
+                if (line2) lines.push(line2);
+            }
+
+            // 3. Перемещения
+            if (currentResults.length) {
+                currentResults.forEach(r => { lines.push(r.text); });
+                const totalEl = document.getElementById('simpleTotal');
+                const totalText = totalEl.textContent;
+                const match = totalText.match(/Итого:\s*(\d+)\s*тонн/);
+                if (match) {
+                    lines.push('Итого: ' + parseInt(match[1]) + ' ' + declensionTons(parseInt(match[1])) + '.');
+                } else {
+                    lines.push(totalText);
+                }
+            }
+
+            // Убираем пустые строки
+            return lines.filter(line => line.trim() !== '').join('\n');
+        }
+
+        // ============================================================
+        // 11. ОБНОВЛЕНИЕ ПРЕВЬЮ
+        // ============================================================
+        function updatePreview() {
+            document.getElementById('previewContent').textContent = getReportText();
+        }
+
+        function updatePlanTotal() {
+            const plan1 = parseInt(document.getElementById('plan1').value) || 0;
+            const plan2 = parseInt(document.getElementById('plan2').value) || 0;
+            const plan3 = parseInt(document.getElementById('plan3').value) || 0;
+            document.getElementById('planTotal').textContent = 'Итого: ' + (plan1 + plan2 + plan3);
+            updatePreview();
+        }
+
+        // ============================================================
+        // 12. УПРАВЛЕНИЕ ПОЛЯМИ XX
+        // ============================================================
+        function updateXXFields() {
+            const template = document.getElementById('reportLine1').value;
+            const container = document.getElementById('xxFieldsContainer');
+
+            const matches = template.match(/\{XX\d?\}/g) || [];
+            const extraMatches = template.match(/\{YY\}|\{ZZ\}|\{QQ\}/g) || [];
+            const uniqueMatches = [...new Set([...matches, ...extraMatches])];
+
+            if (uniqueMatches.length === 0) {
+                container.innerHTML = '';
+                updatePreview();
+                return;
+            }
+
+            let html = '';
+            uniqueMatches.forEach(match => {
+                const key = match.replace('{', '').replace('}', '');
+                let label = key;
+                let inputType = 'number';
+                let options = '';
+
+                if (key === 'XX') label = 'Кол-во';
+                else if (key === 'XX1') label = 'Кросс-док';
+                else if (key === 'XX2') label = 'Наши';
+                else if (key === 'XX3') label = 'Город';
+                else if (key === 'XX4') label = 'Межгород';
+                else if (key === 'YY') label = 'Всего (YY)';
+                else if (key === 'ZZ') label = 'Наши (ZZ)';
+                else if (key === 'QQ') {
+                    label = 'Вариант (QQ)';
+                    inputType = 'select';
+                    options = '<option value="город">город</option><option value="межгород">межгород</option>';
+                }
+
+                if (inputType === 'select') {
+                    html += '<div class="xx-field-group"><label>' + label + ':</label><select data-placeholder="' + key +
+                        '">' + options + '</select></div>';
+                } else {
+                    html += '<div class="xx-field-group"><label>' + label +
+                        ':</label><input type="number" min="0" value="0" data-placeholder="' + key + '" placeholder="0"></div>';
+                }
+            });
+
+            container.innerHTML = html;
+            container.querySelectorAll('input, select').forEach(el => {
+                el.addEventListener('input', updatePreview);
+                el.addEventListener('change', updatePreview);
+            });
+            updatePreview();
+        }
+
+        // ============================================================
+        // 13. ОШИБКИ И СБРОС
+        // ============================================================
+        function showError(msg) {
+            const e = document.getElementById('errorMessage');
+            e.textContent = msg;
+            e.style.display = 'block';
+            document.getElementById('processing').style.display = 'none';
+        }
+
+        function resetState() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('skippedSection').style.display = 'none';
+            document.getElementById('lowTonnageSection').style.display = 'none';
+            document.getElementById('printSection').style.display = 'none';
+            document.getElementById('showPrintTableBtn').style.display = 'none';
+            document.getElementById('previewContent').textContent = 'Доброе утро. К 8.00 всё загружено.';
+            document.getElementById('userNotes').value = '';
+            document.getElementById('plan1').value = 0;
+            document.getElementById('plan2').value = 0;
+            document.getElementById('plan3').value = 0;
+            document.getElementById('planTotal').textContent = 'Итого: 0';
+            currentResults = [];
+            lowTonnageRoutes = [];
+            skippedRows = [];
+            orgTotals = {};
+        }
+
+        function displaySkippedRows() {
+            const tbl = document.getElementById('skippedTable');
+            let html =
+                '<table class="skipped-table"><tr><th>Номер</th><th>Клиент куда</th><th>Масса</th><th>Номер МЛ</th><th>Причина ошибки</th></tr>';
+            skippedRows.forEach(r => {
+                html += '<tr><td>' + escapeHtml(r.number) + '</td><td>' + escapeHtml(r.client) + '</td><td>' + escapeHtml(
+                    r.mass) + '</td><td>' + escapeHtml(r.ml || '-') + '</td><td>' + escapeHtml(r.reason) + '</td></tr>';
+            });
+            html += '</table>';
+            tbl.innerHTML = html;
+            document.getElementById('skippedSection').style.display = 'block';
+        }
+
+        function displayLowTonnageRoutes() {
+            const lst = document.getElementById('lowTonnageList');
+            lst.innerHTML = '';
+            lowTonnageRoutes.forEach((r, i) => {
+                const d = document.createElement('div');
+                d.className = 'low-tonnage-item';
+                d.innerHTML = '<span>' + escapeHtml(r.text) + '</span>' +
+                    '<div class="button-group"><button class="copy-btn-small" data-low-index="' + i +
+                    '">📋 Копировать</button></div>';
+                lst.appendChild(d);
+            });
+            document.querySelectorAll('.copy-btn-small[data-low-index]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-low-index'));
+                    copyToClipboard(lowTonnageRoutes[index].text, this, '✅ Скопировано!');
+                });
+            });
+            document.getElementById('lowTonnageSection').style.display = 'block';
+        }
+
+        // ============================================================
+        // 14. ШАБЛОН
+        // ============================================================
+        function downloadTemplate() {
+            const data = [
+                ['', '', '', '', '', 'Номер', '', 'Клиент куда', '', '', '', '', '', '', '', '', 'Масса (кг)', '', '', '',
+                    'Номер МЛ', '', 'Комментарий'
+                ],
+                ['', '', '', '', '', 'РЛА123', '', 'Оазис Краснодар', '', '', '', '', '', '', '', '', '1500', '', '', '',
+                    'МЛ-001', '', 'Пример алкоголя'
+                ],
+                ['', '', '', '', '', 'РЛК0005167', '', 'Оазис Краснодар3', '', '', '', '', '', '', '', '', '1800', '', '',
+                    '', 'МЛ-002', '', 'Пример алкоголя (РЛК)'
+                ],
+                ['', '', '', '', '', 'ПР456', '', 'Прометей Казань', '', '', '', '', '', '', '', '', '2000', '', '', '',
+                    'МЛ-003', '', 'Пример продуктов'
+                ],
+                ['', '', '', '', '', 'РЛА789', '', 'Абсолют Челябинск', '', '', '', '', '', '', '', '', '1600', '', '',
+                    '', 'МЛ-004', '', 'Если только Абсолют - автоматом ЧЛБ'
+                ],
+                ['', '', '', '', '', 'ПР789', '', 'Прометей Москва', '', '', '', '', '', '', '', '', '0', '', '', '',
+                    'МЛ-005', '', 'Ошибка: Москва не в списке городов'
+                ]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Шаблон');
+            XLSX.writeFile(wb, 'шаблон_заявки.xlsx');
+        }
+
+        // ============================================================
+        // 15. ЗАГРУЗКА ФАЙЛА
+        // ============================================================
+        function handleFile(file) {
+            if (!file) {
+                console.warn('Файл не выбран');
+                return;
+            }
+
+            console.log('Выбран файл:', file.name);
+            resetState();
+            document.getElementById('processing').style.display = 'block';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                    processData(jsonData);
+                } catch (err) {
+                    showError('Ошибка чтения файла: ' + err.message);
+                }
+            };
+            reader.onerror = function() {
+                showError('Ошибка чтения файла');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ============================================================
+        // 16. ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // ---- Загрузка файла ----
+            const fileInput = document.getElementById('fileInput');
+            const fileUpload = document.getElementById('fileUpload');
+
+            // Выбор файла через клик
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files.length > 0) {
+                    handleFile(this.files[0]);
+                }
+                this.value = '';
+            });
+
+            // Drag & Drop
+            fileUpload.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+
+            fileUpload.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+
+            fileUpload.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            });
+
+            // ---- Настройка строк ----
+            document.getElementById('reportLine1').addEventListener('change', updateXXFields);
+            updateXXFields();
+
+            document.getElementById('reportLine2Checkbox').addEventListener('change', updatePreview);
+            document.getElementById('reportLine2Select').addEventListener('change', updatePreview);
+
+            // ---- План ----
+            document.getElementById('plan1').addEventListener('input', updatePlanTotal);
+            document.getElementById('plan2').addEventListener('input', updatePlanTotal);
+            document.getElementById('plan3').addEventListener('input', updatePlanTotal);
+
+            // ---- Примечания ----
+            document.getElementById('userNotes').addEventListener('input', updatePreview);
+
+            // ---- Кнопки ----
+            document.getElementById('copyAllWithMLBtn').addEventListener('click', function(e) {
+                copyAllResults(e.target, true);
+            });
+            document.getElementById('copyAllWithoutMLBtn').addEventListener('click', function(e) {
+                copyAllResults(e.target, false);
+            });
+            document.getElementById('copySkippedBtn').addEventListener('click', function(e) {
+                copySkippedRows(e.target);
+            });
+            document.getElementById('copyTotalBtn').addEventListener('click', function(e) {
+                copyTotal(e.target);
+            });
+            document.getElementById('copyReportBtn').addEventListener('click', function(e) {
+                copyReport(e.target);
+            });
+            document.getElementById('copyPreviewBtn').addEventListener('click', function(e) {
+                copyPreview(e.target);
+            });
+            document.getElementById('showPrintTableBtn').addEventListener('click', showPrintTable);
+            document.getElementById('downloadTemplate').addEventListener('click', downloadTemplate);
+
+            console.log('✅ Приложение инициализировано');
+        });
+    </script>
+
+</body>
+</html>
