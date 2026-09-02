@@ -1240,13 +1240,10 @@
             const plan3 = parseInt(document.getElementById('plan3').value) || 0;
             const planSum = plan1 + plan2 + plan3;
             const totalWithPlan = planSum + totalT;
-            const totalWords = declensionTons(totalWithPlan);
 
             document.getElementById('printPlan').innerHTML =
                 '<span class="print-plan-label">📊 План:</span>' +
-                '<div class="print-plan-content">' + plan1 + '/' + plan2 + '/' + plan3 + '</div>' +
-                '<div class="print-plan-content" style="margin-top:5px; font-size:18px; color:#1b5e20;">Итого: ' +
-                totalWithPlan + ' ' + totalWords + '</div>';
+                '<div class="print-plan-content">План: ' + planSum + '/Факт: ' + totalWithPlan + '</div>';
 
             document.getElementById('printSection').style.display = 'block';
             window.print();
@@ -1293,7 +1290,7 @@
         }
 
         // ============================================================
-        // 10. ПОЛУЧЕНИЕ ТЕКСТА ОТЧЁТА (порядок: Доброе утро → Строка 2 → Перемещения → Итого)
+        // 10. ПОЛУЧЕНИЕ ТЕКСТА ОТЧЁТА
         // ============================================================
         function getLine1WithValues() {
             const select = document.getElementById('reportLine1');
@@ -1349,6 +1346,21 @@
                 }
             }
 
+            // 4. План/Факт
+            const plan1 = parseInt(document.getElementById('plan1').value) || 0;
+            const plan2 = parseInt(document.getElementById('plan2').value) || 0;
+            const plan3 = parseInt(document.getElementById('plan3').value) || 0;
+            const planSum = plan1 + plan2 + plan3;
+
+            const totalEl = document.getElementById('simpleTotal');
+            const totalText = totalEl.textContent;
+            const match = totalText.match(/Итого:\s*(\d+)\s*тонн/);
+            let moveTotal = match ? parseInt(match[1]) : 0;
+
+            const factTotal = planSum + moveTotal;
+
+            lines.push('План: ' + planSum + '/Факт: ' + factTotal);
+
             // Убираем пустые строки
             return lines.filter(line => line.trim() !== '').join('\n');
         }
@@ -1364,7 +1376,10 @@
             const plan1 = parseInt(document.getElementById('plan1').value) || 0;
             const plan2 = parseInt(document.getElementById('plan2').value) || 0;
             const plan3 = parseInt(document.getElementById('plan3').value) || 0;
-            document.getElementById('planTotal').textContent = 'Итого: ' + (plan1 + plan2 + plan3);
+            const total = plan1 + plan2 + plan3;
+            document.getElementById('planTotal').textContent = 'Итого: ' + total;
+
+            // Обновляем итоговую строку в превью
             updatePreview();
         }
 
