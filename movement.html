@@ -640,12 +640,24 @@
             font-weight: 700;
             color: #2e7d32;
             font-size: 1.1em;
-            padding: 8px 16px;
+            padding: 12px 16px;
             background: #c8e6c9;
             border-radius: 6px;
             border: 2px solid #4caf50;
-            min-width: 200px;
+            min-width: 250px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .plan-result .plan-numbers {
+            font-size: 0.9em;
+            color: #1b5e20;
+        }
+        .plan-result .plan-total {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #1b5e20;
         }
 
         @media (max-width: 768px) {
@@ -655,6 +667,9 @@
             }
             .plan-input-group {
                 justify-content: center;
+            }
+            .plan-result {
+                min-width: auto;
             }
         }
 
@@ -842,7 +857,10 @@
                     <label>3:</label>
                     <input type="number" min="0" value="0" id="plan3" class="plan-input">
                 </div>
-                <span class="plan-result" id="planTotal">План: 0/Факт: 0</span>
+                <span class="plan-result" id="planTotal">
+                    <span class="plan-numbers" id="planNumbers">0/0/0</span>
+                    <span class="plan-total" id="planTotalText">План: 0/Факт: 0</span>
+                </span>
             </div>
         </div>
 
@@ -1246,7 +1264,9 @@
 
             document.getElementById('printPlan').innerHTML =
                 '<span class="print-plan-label">📊 План:</span>' +
-                '<div class="print-plan-content">План: ' + planSum + '/Факт: ' + totalWithPlan + '</div>';
+                '<div class="print-plan-content">' + plan1 + '/' + plan2 + '/' + plan3 + '</div>' +
+                '<div class="print-plan-content" style="margin-top:5px; font-size:18px; color:#1b5e20;">План: ' + planSum +
+                '/Факт: ' + totalWithPlan + '</div>';
 
             document.getElementById('printSection').style.display = 'block';
             window.print();
@@ -1366,6 +1386,9 @@
             const plan3 = parseInt(document.getElementById('plan3').value) || 0;
             const planSum = plan1 + plan2 + plan3;
 
+            // Обновляем числа
+            document.getElementById('planNumbers').textContent = plan1 + '/' + plan2 + '/' + plan3;
+
             // Получаем итог перемещений
             const totalEl = document.getElementById('simpleTotal');
             const totalText = totalEl.textContent;
@@ -1374,7 +1397,7 @@
 
             const factTotal = planSum + moveTotal;
 
-            document.getElementById('planTotal').textContent = 'План: ' + planSum + '/Факт: ' + factTotal;
+            document.getElementById('planTotalText').textContent = 'План: ' + planSum + '/Факт: ' + factTotal;
 
             // Обновляем превью
             updatePreview();
@@ -1457,7 +1480,8 @@
             document.getElementById('plan1').value = 0;
             document.getElementById('plan2').value = 0;
             document.getElementById('plan3').value = 0;
-            document.getElementById('planTotal').textContent = 'План: 0/Факт: 0';
+            document.getElementById('planNumbers').textContent = '0/0/0';
+            document.getElementById('planTotalText').textContent = 'План: 0/Факт: 0';
             currentResults = [];
             lowTonnageRoutes = [];
             skippedRows = [];
